@@ -1,0 +1,39 @@
+• Users/Parties (maybe users associated to parties)
+    ○ Maybe have diff roles, i.e. game admin, bettor, athlete, etc
+• Game
+    ○ 
+    ○ Privacy
+    ○ Authority
+    ○ Variables
+        § Odds Team A
+        § Odds Team B
+        § Type of game (we may only implement functionality for one sport, i.e. horse racing or boxing)
+    ○ Choices
+    ○ Keys
+• Game Result
+    ○ Variables
+        § Final Score
+• Betting Account with appropriate party as owner
+• Bet Slip/IOU
+    ○ Variables
+        § Amount
+        § Game CID
+        § Bettor
+        § Type of bet: Options will be head to head (H2H) and Individual Better vs. House
+• Escrow
+• Assets
+• State or Govt Agency - they should get a cut of any bet placed
+    ○ Maybe pick a state to generally adhere to state betting laws - shouldn’t have to spend a lot of time researching betting laws though
+    ○ Consider making them an observer on every bet
+        § May not need all templates involved in UTXO
+• Use UTXO model to submit multiple bets
+• Notes
+    ○ Use delegation pattern
+    ○ Should consider having a centralized bookie that signs off on someone betting, putting things into escrow, getting paid, etc
+    ○ Should bettor be allowed to place any bet with a bookie?
+        § Once a bookie signs off on odds, anyone can take that bet
+    ○ Will bookie be sole issuer of bets?
+        § Maybe game admin as well
+    
+• Edge Case Considerations
+    ○ If a party is an athlete, they should not be able to place bets on games they are involved in
