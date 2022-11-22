@@ -1,0 +1,11 @@
+module Account where
+
+template Account with
+        house: Party
+        owner: Party
+        age: Decimal -- this identifies the age of the bettor, not the age of the acct
+    where
+        signatory house, owner
+
+        
+

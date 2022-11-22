@@ -1,39 +1,44 @@
 module Bet where
 
+import Account
+
 template Bet with
-    minBetAmount: Decimal
-    maxBetAmount: Decimal
+    admin: Party
     house: Party
-    bettor: Party
+    bettors: [Party]
     amount: Decimal
-    odds: Tuple (Decimal, Decimal)
-    selectedEntity: Party
-    contractOwnerFields: String
-    name: String
-    address: String
+    odds: (Decimal, Decimal) -- maybe revise odds based on type of bet, could be a Decimal instead of tuple
+    horses: [Text] -- we are only doing horse racing
   where
     signatory house, admin
     observer bettor
 
     choice Place_Bet : ()
         with
+            horse: Text
+            amount: Decimal
         controller bettor
         do
+            -- assert that inputted horse is in horses set
+            pure()
         
     choice Cancel_Bet_Bettor : ()
         with
         controller bettor
         do
+            pure()
     
     choice Cancel_Bet_House : ()
         with
         controller house
         do
+            pure()
 
     choice Settle_Bet : ()
         with
         controller house
         do
+            pure()
             -- deduct tax amount
             -- deduct house fee
             -- if fixed odds
