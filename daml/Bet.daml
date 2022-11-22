@@ -1,0 +1,49 @@
+module Bet where
+
+template Bet with
+    minBetAmount: Decimal
+    maxBetAmount: Decimal
+    house: Party
+    owner: Party
+    amount: Decimal
+    odds: Tuple (Decimal, Decimal)
+    selectedEntity: Party
+    contractOwnerFields: String
+    name: String
+    address: String
+  where
+    signatory house
+    observer owner
+
+    choice Place_Bet : ()
+        with
+        controller house
+        do
+        
+    
+    choice Cancel_Bet : ()
+        with
+        controller house
+        do
+
+
+    choice Settle_Bet : ()
+        with
+        controller house
+        do
+
+    choice Deduct_Tax_Amount : ()
+        with
+        controller house
+        do
+
+    choice Deduct_House_Fee : ()
+        with
+        controller house
+        do
+
+    -- sliriano: Wouldn't this choice do the same thing as Settle_Bet?
+    choice Payout_Winner : ()
+        with
+        controller house
+        do
