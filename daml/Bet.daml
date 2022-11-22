@@ -4,7 +4,7 @@ template Bet with
     minBetAmount: Decimal
     maxBetAmount: Decimal
     house: Party
-    owner: Party
+    bettor: Party
     amount: Decimal
     odds: Tuple (Decimal, Decimal)
     selectedEntity: Party
@@ -12,38 +12,31 @@ template Bet with
     name: String
     address: String
   where
-    signatory house
-    observer owner
+    signatory house, admin
+    observer bettor
 
     choice Place_Bet : ()
         with
-        controller house
+        controller bettor
         do
         
+    choice Cancel_Bet_Bettor : ()
+        with
+        controller bettor
+        do
     
-    choice Cancel_Bet : ()
+    choice Cancel_Bet_House : ()
         with
         controller house
         do
-
 
     choice Settle_Bet : ()
         with
         controller house
         do
-
-    choice Deduct_Tax_Amount : ()
-        with
-        controller house
-        do
-
-    choice Deduct_House_Fee : ()
-        with
-        controller house
-        do
-
-    -- sliriano: Wouldn't this choice do the same thing as Settle_Bet?
-    choice Payout_Winner : ()
-        with
-        controller house
-        do
+            -- deduct tax amount
+            -- deduct house fee
+            -- if fixed odds
+                -- payout winner
+            -- else if pari-mutual
+                -- distribute remaining amount proportionally
