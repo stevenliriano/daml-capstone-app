@@ -1,0 +1,24 @@
+Fixed odds Wagering
+	1. Container - bunch of attributes (Choices)
+		a. Place the Bet 
+		b. Cancel the Bet
+		c. Settle the Bet 
+			i. Deduct Tax amount
+			ii. Deduct House Fee
+			iii. Payout Winner
+		d. Account Flow - Need to discuss 
+		e. Authorization and Privacy - (who can see what and who can do what) - Need to discuss 
+		f. Contract Betting Fields :
+			i. Minimum bet amount
+			ii. Max bet amount
+			iii. House
+			iv. Owner of the Bet
+			v. Bet Amount
+			vi. Odds(ex : Dice)
+			vii. Selected Entity (selected horse , Selected Team)
+		g. Contract Owner Fields (KYC)
+			i. Name
+			ii. Address
+
+
+

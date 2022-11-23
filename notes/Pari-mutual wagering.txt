@@ -1,0 +1,22 @@
+Pari-mutual wagering
+	1. Container - bunch of attributes (Choices)
+		a. Place the Bet 
+			i. Add Bet Amount in common pool
+		b. Cancel the Bet
+		c. Settle the Bet
+			i. Deduct Tax amount
+			ii. Deduct House Fee
+			iii. Distribute Remaining amount proportionally
+		d. Account Flow - Need to discuss 
+		e. Authorization and Privacy - (who can see what and who can do what) - Need to discuss 
+		f. Contract Betting Fields :
+			i. Minimum bet amount
+			ii. Max bet amount
+			iii. House
+			iv. Owner of the Bet
+			v. Bet Amount
+			vi. Odds(ex : Dice)
+			vii. Selected Entity (selected horse , Selected Team)
+		g. Contract Owner Fields (KYC)
+			i. Name
+			   Address
