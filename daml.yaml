@@ -1,0 +1,4 @@
+sdk-version: 2.3.0
+name: capstone
+source: daml
+init-script: Setup:setup
