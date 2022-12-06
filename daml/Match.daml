@@ -1,32 +1,122 @@
 module Match where
 
-import BetSlip
+import Daml.Script
+import Bet
+import House
 
 template Match
   with
-    admin : Party
-    bookie : Party
+    admin       : Party
+    bookie      : Party
     competitors : [Text]
+    time        : Time
+    date        : Date
   where
     signatory admin
     observer bookie
 
-    nonconsuming choice CreateBetSlip : ContractId BetSlip
+    nonconsuming choice CreateBetSlip : ()
       with
+        
         odds : [(Text, Decimal, Decimal)]
       controller bookie
       do
         -- believe the BetSlip contract should be updated to only contain the fields below
+        house <- fetchByKey @House bookie 
+        
         create BetSlip with
-          bookie
-          match = this.ContractId
-          odds
+         bookie = bookie 
+         odds = odds        
+         bettors=bettors
+         matchCID = this.ContractId
+          
 
-    choice SettleMatch : Text
+    -- choice SettleMatch : Text
+    --   with
+    --     victor : Text
+    --   controller admin
+    --   do
+    --     assert "Match admin declared a victor that was not a competitor" $ (elemIndex victor competitors) !== None
+    --     return victor
+
+
+
+template BetSlip
+  with
+    bookie        : Party
+    odds          : [(Text,Int,Int)]      -- Tuple like Thunder, 3, 1 odds
+    bettors       : [Party]
+    matchCID      : ContractId Match 
+                                          
+  where
+    
+    signatory bookie
+    observer bettors 
+    
+    nonconsuming choice PlaceBet : ContractId Bet
       with
-        victor : Text
-      controller admin
-      do
-        assert "Match admin declared a victor that was not a competitor" $ (elemIndex victor competitors) !== None
-        return victor
+        betAmount : Decimal
+        horsePick : Text
+        bettor: Party
+      controller bettor                   -- potential question to DAML? 
+      do create Bet with
+           bookie    = bookie
+           bettor    = bettor
+           pick      = horsePick
+           amount    = betAmount
+           
+    choice SettleBets: ()  
+      with 
+       
+      controller bookie
+      do 
+       return ()
+
+
+setup : Script() 
+setup = script do
+-- user_setup_begin
+  alice    <- allocatePartyWithHint "Alice" (PartyIdHint "Alice")
+  bob      <- allocatePartyWithHint "Bob" (PartyIdHint "Bob")
+  charlie  <- allocatePartyWithHint "Charlie" (PartyIdHint "Charlie")
+  gambleking <- allocatePartyWithHint "GambleKing" (PartyIdHint "GambleKing")
+  aliceId <- validateUserId "alice"
+  bobId   <- validateUserId "bob"
+  charlieId <- validateUserId "charlie"
+  gamblekingId <- validateUserId "gambleking"
+  
+-- user_setup_end
+  let bettors = [alice,bob]
+      odds = [ ("Thunder",3,2), ("QuickSabd",2,1)]
+
+  firstSlip <- submit gambleking do
+    createCmd BetSlip with
+      bookie  = gambleking
+      odds  = odds
+      bettors = bettors
+
+  --  Happy Path 
+
+  submit alice do
+    exerciseCmd firstSlip PlaceBet with 
+      betAmount = 152.00
+      horsePick = "Thunder"
+      bettor    =  alice  
+
+  -- Unhappy path with privacy 
+
+  submitMustFail bob do
+    exerciseCmd firstSlip PlaceBet with 
+      betAmount = 152.00
+      horsePick = "Thunder"
+      bettor    = alice   
+
+  pure()
+
+  
+  
+
+
+
+
 

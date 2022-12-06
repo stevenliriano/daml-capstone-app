@@ -1,17 +1,3 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
-
-*.dar
-main/Bet/.daml
-main/Cash/.daml
-main/GamblingAccount/.daml
-main/Tests/.daml
-triggers/.daml
-build
-node_modules
-*.zip
-*.log
-ui/daml.js
-.DS_Store
-canton-sandbox-port.txt
-json-api-port.txt
-log 
+/.daml
+/log
+navigator.log

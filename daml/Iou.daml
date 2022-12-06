@@ -13,3 +13,4 @@ template Iou
   where
     ensure (houseHandle /= " " &&  bettorHandle /= " " && amount /=0.0)
     signatory house,bettor
+    

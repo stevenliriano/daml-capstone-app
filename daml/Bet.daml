@@ -6,19 +6,21 @@ type BetId = ContractId Bet
 
 template Bet
   with
-    house    : Party
-    bettors   : [Party]
-    winner   : Text
-    horses   : [Text]
+    bookie   : Party
+    bettor    : Party
+    pick      : Text
+    amount    : Decimal
   where
-    signatory house
-    observer bettors
-    choice PickWinner : BetId
-      with
-        newWinner : Text
-      controller house
-      do create this with
-           winner = newWinner
+    signatory  bettor       --the responsibility of the bet is on Alice 
+    observer   bookie       --the bookie can access the archived bet in case there is a dispute 
+                            --the bookie will consent to the bet by offering a bet slip 
+
+    choice CancelBet : ()
+      controller bettor
+      do 
+      --return IOUs 
+       return ()            
+       
 
 setup : Script BetId
 setup = script do
@@ -34,12 +36,16 @@ setup = script do
   createUser (User gamblekingId (Some gambleking)) [CanActAs gambleking]
 -- user_setup_end
 
-  firstBet <- submit gambleking do
+  submit alice do
     createCmd Bet with
-      house  = gambleking
-      bettors = [alice, bob]
-      winner = ""
-      horses  = ["Thunder","Lightning","Quick Sand","Gallop King"]
+      bookie  = gambleking
+      bettor  = alice
+      pick    = "Thunder"
+      amount  = 200.0
+     
 
-  submit gambleking do
-    exerciseCmd firstBet PickWinner with newWinner = "Quick Sand"
+ 
+
+ 
+
+ 

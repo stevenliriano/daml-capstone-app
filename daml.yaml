@@ -1,4 +1,12 @@
-sdk-version: 2.3.0
-name: capstone
+# for config file options, refer to
+# https://docs.daml.com/tools/assistant.html#project-config-file-daml-yaml
+
+sdk-version: 2.4.0
+name: DamlTrain
 source: daml
-init-script: Setup:setup
+init-script: Main:setup
+version: 0.0.1
+dependencies:
+  - daml-prim
+  - daml-stdlib
+  - daml-script

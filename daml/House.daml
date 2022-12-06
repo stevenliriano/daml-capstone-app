@@ -1,5 +1,7 @@
 module House where
 
+import Daml.Script
+
 template House
   with
     bookie : Party
@@ -19,3 +21,31 @@ template House
           bookie
           registeredBettors = registeredBettorsUpdated
           -- gamblingAccount -- TODO: uncomment this once GamblingAccount is implemented
+
+setup : Script ()
+setup = script do
+-- user_setup_begin
+  alice <- allocatePartyWithHint "Alice" (PartyIdHint "Alice")
+  bob   <- allocatePartyWithHint "Bob" (PartyIdHint "Bob")
+  charlie   <- allocatePartyWithHint "Charlie" (PartyIdHint "Charlie")
+  gambleking <- allocatePartyWithHint "GambleKing" (PartyIdHint "GambleKing")
+  aliceId <- validateUserId "alice"
+  bobId <- validateUserId "bob"
+  charlieId <- validateUserId "charlie"
+  gamblekingId <- validateUserId "gambleking"
+-- user_setup_end
+
+  let bettors = [alice, bob]
+
+  houseHandle <- submit gambleking do
+    createCmd House with
+      bookie = gambleking
+      registeredBettors = bettors
+
+--  Happy Path 
+
+  submit  gambleking do
+    exerciseCmd houseHandle AddBettor with 
+      newBettor = charlie 
+ 
+  pure()
