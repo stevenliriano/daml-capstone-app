@@ -1,0 +1,21 @@
+module House where
+
+template House
+  with
+    bookie : Party
+    registeredBettors : [Party]
+    -- gamblingAccount  : ContractId GamblingAccount -- TODO: uncomment this once GamblingAccount is implemented
+  where
+    signatory bookie
+    observer registeredBettors
+
+    choice AddBettor : ContractId House
+      with
+        newBettor : Party
+      controller bookie
+      do
+        let registeredBettorsUpdated = newBettor :: registeredBettors
+        create House with
+          bookie
+          registeredBettors = registeredBettorsUpdated
+          -- gamblingAccount -- TODO: uncomment this once GamblingAccount is implemented

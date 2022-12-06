@@ -1,0 +1,32 @@
+module Match where
+
+import BetSlip
+
+template Match
+  with
+    admin : Party
+    bookie : Party
+    competitors : [Text]
+  where
+    signatory admin
+    observer bookie
+
+    nonconsuming choice CreateBetSlip : ContractId BetSlip
+      with
+        odds : [(Text, Decimal, Decimal)]
+      controller bookie
+      do
+        -- believe the BetSlip contract should be updated to only contain the fields below
+        create BetSlip with
+          bookie
+          match = this.ContractId
+          odds
+
+    choice SettleMatch : Text
+      with
+        victor : Text
+      controller admin
+      do
+        assert "Match admin declared a victor that was not a competitor" $ (elemIndex victor competitors) !== None
+        return victor
+
