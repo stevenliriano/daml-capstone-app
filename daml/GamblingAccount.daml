@@ -1,0 +1,67 @@
+module GamblingAccount where
+
+import Daml.Script
+
+template GamblingAccount
+    with
+        bookie : Party
+        owner : Party
+        amount : Decimal
+    where
+        signatory bookie, owner
+        key (bookie, owner) : (Party, Party)
+        maintainer key._2
+
+        choice UpdateFunds : ContractId GamblingAccount
+            with
+                amountDelta : Decimal -- Currently allowing for negative decimals to be 
+                                        -- inputted to subtract funds from account. Is this correct?
+            controller bookie, owner
+            do
+                create GamblingAccount 
+                    with
+                        bookie = bookie
+                        owner = owner
+                        amount = amount + amountDelta
+
+setup : Script() 
+setup = script do
+-- user_setup_begin
+  alice    <- allocatePartyWithHint "Alice" (PartyIdHint "Alice")
+  bob      <- allocatePartyWithHint "Bob" (PartyIdHint "Bob")
+  charlie  <- allocatePartyWithHint "Charlie" (PartyIdHint "Charlie")
+  matchqueen <- allocatePartyWithHint "MatchQueen" (PartyIdHint "MatchQueen")
+  gambleking <- allocatePartyWithHint "GambleKing" (PartyIdHint "GambleKing")
+  aliceId <- validateUserId "alice"
+  bobId   <- validateUserId "bob"
+  charlieId <- validateUserId "charlie"
+  matchqueenId <- validateUserId "matchqueen"
+  gamblekingId <- validateUserId "gambleking"
+-- user_setup_end
+
+  account1 <- submit gambleking do
+    createCmd GamblingAccount with
+        bookie = gambleking
+        owner = gambleking
+        amount = 500.0
+
+  pure()
+
+
+
+--   house1 <- submit gambleking do
+--     createCmd House with
+--       bookie = gambleking
+--       registeredBettors = bettors
+
+--   match1 <- submit matchqueen do
+--     createCmd Match with
+--       admin = matchqueen
+--       bookie = gambleking
+--       competitors = ["Thunder", "Quicksand"]
+--       time = currentTime
+  
+--   firstSlip <-submit gambleking do
+--     exerciseCmd match1 CreateBetSlip with 
+--       odds = [ ("Thunder",3,2), ("QuickSand",2,1)]
+

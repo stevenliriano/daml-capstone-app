@@ -1,0 +1,45 @@
+module Cash where
+
+import DA.Set as Set
+
+data Currency = USD | EUR | GBP | CHF 
+  deriving (Eq, Show)
+  
+template Cash with
+    issuer : Party
+    -- The cashAsset owner
+    owner : Party
+    -- The amount of cash
+    amount : Decimal
+    currency : Currency
+    observers : Set Party
+  where
+    signatory issuer, owner
+    observer observers
+
+template CashTransfer
+  with
+    -- The cashAsset to be transferred.
+    cash : Cash
+    -- The recepient of the transfer.
+    recipient : Party
+  where
+    signatory (signatory cash)
+    observer recipient
+
+    choice Cancel_Transfer : ContractId Cash
+      controller cash.owner 
+      do
+        create cash
+
+    choice Reject_Transfer : ContractId Cash
+      controller recipient
+      do
+        create cash
+
+    choice Accept_Transfer : ContractId Cash
+      controller recipient, cash.issuer
+      do
+        create cash with
+          owner = recipient
+          observers = Set.empty

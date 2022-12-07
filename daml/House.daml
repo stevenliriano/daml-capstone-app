@@ -2,6 +2,8 @@ module House where
 
 import Daml.Script
 
+-- TODO: Include comment to explain templates below for those who are not up to date on the code
+
 template House
   with
     bookie : Party
@@ -13,7 +15,7 @@ template House
     key bookie : Party
     maintainer key
 
-    choice AddBettor : ContractId House
+    choice AddBettor : ContractId GamblingAccountProposal
       with
         newBettor : Party
       controller bookie
@@ -22,7 +24,72 @@ template House
         create House with
           bookie
           registeredBettors = registeredBettorsUpdated
+
+        create GamblingAccountProposal with
+          gamblingAccountAgreement = GamblingAccountAgreement
+            with
+              bookie = bookie
+              bettor = newBettor
+
           -- gamblingAccount -- TODO: uncomment this once GamblingAccount is implemented
+
+template GamblingAccount
+  with
+    bookie : Party
+    bettor : Party
+    amount : Decimal
+  where
+      signatory bookie, bettor
+      key (bookie, bettor) : (Party, Party)
+      maintainer key._2
+
+      choice UpdateFunds : ContractId GamblingAccount
+          with
+              amountDelta : Decimal -- Currently allowing for negative decimals to be 
+                                      -- inputted to subtract funds from account. Is this correct?
+          controller bookie, bettor
+          do
+              create GamblingAccount 
+                  with
+                      bookie = bookie
+                      bettor = bettor
+                      amount = amount + amountDelta
+
+
+template GamblingAccountProposal
+  with
+    gamblingAccountAgreement : GamblingAccountAgreement
+  where
+    signatory gamblingAccountAgreement.bookie
+    observer gamblingAccountAgreement.bettor
+
+    choice AcceptGamblingAccountProposal : ContractId GamblingAccountAgreement
+      controller gamblingAccountAgreement.bettor
+      do  
+        create gamblingAccountAgreement
+          with
+            bookie = gamblingAccountAgreement.bookie
+            bettor = gamblingAccountAgreement.bettor
+
+
+template GamblingAccountAgreement
+  with
+    bookie : Party
+    bettor : Party
+  where
+    signatory bookie, bettor
+    
+    choice CreateGamblingAccount : ContractId GamblingAccount
+      with
+        amount : Decimal
+      controller bookie
+      do
+        create GamblingAccount
+          with
+            bookie = bookie
+            bettor = bettor
+            amount = amount
+
 
 setup : Script ()
 setup = script do
@@ -46,8 +113,16 @@ setup = script do
 
 --  Happy Path 
 
-  submit  gambleking do
+-- Charlie would create Gambling Account here
+
+  gamblingAccountProposal1 <- submit gambleking do
     exerciseCmd houseHandle AddBettor with 
-      newBettor = charlie 
+      newBettor = charlie
+
+  gamblingAccountAgreement1 <- submit charlie do
+    exerciseCmd gamblingAccountProposal1 AcceptGamblingAccountProposal
  
+  submit gambleking do
+    exerciseCmd gamblingAccountAgreement1 (CreateGamblingAccount 500.0)
+
   pure()

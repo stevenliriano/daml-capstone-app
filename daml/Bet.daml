@@ -4,6 +4,8 @@ import Daml.Script
 
 type BetId = ContractId Bet
 
+-- TODO: Include comment to explain templates below for those who are not up to date on the code
+
 template Bet
   with
     bookie   : Party

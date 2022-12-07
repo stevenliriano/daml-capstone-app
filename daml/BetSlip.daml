@@ -4,6 +4,8 @@ import Daml.Script
 
 type BetSlipId = ContractId BetSlip
 
+-- TODO: Include comment to explain templates below for those who are not up to date on the code
+
 template BetSlip
   with
     house   : Party

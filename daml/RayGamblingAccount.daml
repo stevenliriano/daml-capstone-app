@@ -1,0 +1,83 @@
+-- Copyright (c) 2021 Digital Asset (Switzerland) GmbH and/or its affiliates. All rights reserved.
+-- SPDX-License-Identifier: Apache-2.0
+
+-- This module implements an account for holding cash assets.
+
+module GamblingAccount where
+
+data Currency = USD | EUR | GBP | CHF 
+  deriving (Eq, Show)
+
+template GamblingAccount with
+    currency : Currency
+    -- The owner of the account.
+    owner : Party
+    issuer : Party
+    accType : Text
+
+  where
+    signatory issuer, owner
+    key (owner, accType) : (Party, Text)
+    maintainer key._1
+
+    -- Send an invite for a party to create AssetHoldingAccount for this asset type.
+    nonconsuming choice Invite_New_Asset_Holder : ContractId CashAssetHoldingAccountProposal
+      with
+        recipient : Party
+      controller owner 
+      do
+        create CashAssetHoldingAccountProposal with
+          account = this
+          recipient
+
+template CashAssetHoldingAccountProposal with
+    account : GamblingAccount
+    recipient : Party
+  where
+    signatory account.issuer
+    observer recipient
+
+    choice CashAssetHoldingAccountProposal_Accept : ContractId GamblingAccount
+      controller recipient 
+      do
+        create account with
+          owner = recipient
+          accType = "BETTOR"
+
+    choice CashAssetHoldingAccountProposal_Reject : ()
+      controller recipient 
+      do
+        return ()
+
+template GamblingAccountHelper
+  with
+    p : Party
+  where
+    signatory p
+    choice FetchByKey : (ContractId GamblingAccount, GamblingAccount)
+      with
+        keyG : (Party, Text)
+      controller p
+      do fetchByKey @GamblingAccount keyG
+
+template GamblingEventBet with
+    gblAccount : GamblingAccount 
+    amount : Decimal
+    issuer : Party
+    owner : Party
+    horseName : Text
+  where
+    signatory owner, issuer
+
+template GamblingEventBetContainer with
+    issuer : Party
+    allBets : [GamblingEventBet]
+  where
+    signatory issuer
+    choice AddGamblingEventBet: ContractId GamblingEventBet with
+        gamblingEventBet : GamblingEventBet 
+      controller issuer
+      do
+        create this with allBets = gamblingEventBet :: allBets
+
+--    choice pickWinner with player controller house - loop through the list and pick the bet based on the player.  

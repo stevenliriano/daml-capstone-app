@@ -4,6 +4,8 @@ import Daml.Script
 import Bet
 import House
 
+-- TODO: Include comment to explain templates below for those who are not up to date on the code
+
 template Match
   with
     admin       : Party
@@ -13,7 +15,9 @@ template Match
   where
     signatory admin
     observer bookie
-    key (admin, time) : (Party, Time)
+    -- admin, competitors, time identifies a unique Match, and we will 
+    -- enforce that the bookie can only create one BetSlip per Match
+    key (admin, competitors, time) : (Party, [Text], Time)
     maintainer key._1
 
     nonconsuming choice CreateBetSlip : ContractId BetSlip
@@ -23,32 +27,44 @@ template Match
       do
         -- believe the BetSlip contract should be updated to only contain the fields below
         (houseContractId, housePayload) <- fetchByKey @House bookie 
-        (matchContractID, matchPayload) <- fetchByKey @Match (admin, time) -- find more elegant way of getting contractID from within template
         let bettors = housePayload.registeredBettors
         create BetSlip with
+         admin = admin
          bookie = bookie 
-         odds = odds        
+         competitors = competitors
+         odds = odds
+         time = time        
          bettors=bettors
-         matchCID = matchContractID
+         matchCID = self -- try to get rid of this since we are now using a key to identify Matches
           
 
-    -- choice SettleMatch : Text
-    --   with
-    --     victor : Text
-    --   controller admin
-    --   do
-    --     assert "Match admin declared a victor that was not a competitor" $ (elemIndex victor competitors) !== None
-    --     return victor
+    choice SettleMatch : ()
+      with
+        victor : Text
+      controller admin
+      do
+        (betSlipContractID, betSlipPayload) <- fetchByKey @BetSlip (bookie, competitors, time)
+        exercise betSlipContractID SettleBets
+        pure()
 
 template BetSlip
   with
+    admin         : Party
     bookie        : Party
-    odds          : [(Text,Int,Int)]      -- Tuple like Thunder, 3, 1 odds
+    competitors   : [Text]
+    odds          : [(Text,Int,Int)]      -- Tuple like Thunder, 3, 1 odds. 
+                                          -- First int in odds represents bettor's profit if they win, 
+                                          -- second int represents how much they bet. For example, if the odds are 3:1,
+                                          -- the bettor would bet $1 to win $3 profit, meaning they would win $4 total.
+    time          : Time
     bettors       : [Party]
     matchCID      : ContractId Match                     
   where
     signatory bookie
-    observer bettors 
+    observer bettors, admin -- Ask how we can allow bettors to exercise choices 
+                      -- on this contract without seeing each other as bettors
+    key (bookie, competitors, time) : (Party, [Text], Time)
+    maintainer key._1
     
     nonconsuming choice PlaceBet : ContractId Bet
       with
@@ -56,16 +72,17 @@ template BetSlip
         horsePick : Text
         bettor: Party
       controller bettor                   -- potential question to DAML? 
-      do create Bet with
+      do 
+        create Bet with
            bookie    = bookie
            bettor    = bettor
            pick      = horsePick
            amount    = betAmount
+           -- amount that bookie is responsible for betting
            
     choice SettleBets: ()  
       with 
-       
-      controller bookie
+      controller admin
       do 
        return ()
 
@@ -88,7 +105,8 @@ setup = script do
   let bettors = [alice,bob]
       odds = [ ("Thunder",3,2), ("QuickSand",2,1)]
 
-  currentTime <- getTime
+  currentTime <- getTime -- using getTime to get a valid UTC timestamp
+                          -- but we should really set time of matches to be an arbitrary timestamp in the future
 
   house1 <- submit gambleking do
     createCmd House with
@@ -102,17 +120,9 @@ setup = script do
       competitors = ["Thunder", "Quicksand"]
       time = currentTime
   
-  submit gambleking do
+  firstSlip <-submit gambleking do
     exerciseCmd match1 CreateBetSlip with 
-      odds = odds
-
-  -- BetSlip Test Script below ---------------------
-  firstSlip <- submit gambleking do
-    createCmd BetSlip with
-      bookie  = gambleking
-      odds  = odds
-      bettors = bettors
-      matchCID = match1
+      odds = [ ("Thunder",3,2), ("QuickSand",2,1)]
 
   --  Happy Path 
 
@@ -126,9 +136,13 @@ setup = script do
 
   submitMustFail bob do
     exerciseCmd firstSlip PlaceBet with 
-      betAmount = 152.00
+      betAmount = 162.00
       horsePick = "Thunder"
       bettor    = alice   
+
+  submit matchqueen do
+    exerciseCmd match1 SettleMatch with
+      victor = "Thunder"
 
   pure()
 
