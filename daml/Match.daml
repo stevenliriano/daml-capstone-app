@@ -10,25 +10,26 @@ template Match
     bookie      : Party
     competitors : [Text]
     time        : Time
-    date        : Date
   where
     signatory admin
     observer bookie
+    key (admin, time) : (Party, Time)
+    maintainer key._1
 
-    nonconsuming choice CreateBetSlip : ()
+    nonconsuming choice CreateBetSlip : ContractId BetSlip
       with
-        
-        odds : [(Text, Decimal, Decimal)]
+        odds : [(Text, Int, Int)]
       controller bookie
       do
         -- believe the BetSlip contract should be updated to only contain the fields below
-        house <- fetchByKey @House bookie 
-        
+        (houseContractId, housePayload) <- fetchByKey @House bookie 
+        (matchContractID, matchPayload) <- fetchByKey @Match (admin, time) -- find more elegant way of getting contractID from within template
+        let bettors = housePayload.registeredBettors
         create BetSlip with
          bookie = bookie 
          odds = odds        
          bettors=bettors
-         matchCID = this.ContractId
+         matchCID = matchContractID
           
 
     -- choice SettleMatch : Text
@@ -39,17 +40,13 @@ template Match
     --     assert "Match admin declared a victor that was not a competitor" $ (elemIndex victor competitors) !== None
     --     return victor
 
-
-
 template BetSlip
   with
     bookie        : Party
     odds          : [(Text,Int,Int)]      -- Tuple like Thunder, 3, 1 odds
     bettors       : [Party]
-    matchCID      : ContractId Match 
-                                          
+    matchCID      : ContractId Match                     
   where
-    
     signatory bookie
     observer bettors 
     
@@ -79,21 +76,43 @@ setup = script do
   alice    <- allocatePartyWithHint "Alice" (PartyIdHint "Alice")
   bob      <- allocatePartyWithHint "Bob" (PartyIdHint "Bob")
   charlie  <- allocatePartyWithHint "Charlie" (PartyIdHint "Charlie")
+  matchqueen <- allocatePartyWithHint "MatchQueen" (PartyIdHint "MatchQueen")
   gambleking <- allocatePartyWithHint "GambleKing" (PartyIdHint "GambleKing")
   aliceId <- validateUserId "alice"
   bobId   <- validateUserId "bob"
   charlieId <- validateUserId "charlie"
+  matchqueenId <- validateUserId "matchqueen"
   gamblekingId <- validateUserId "gambleking"
   
 -- user_setup_end
   let bettors = [alice,bob]
-      odds = [ ("Thunder",3,2), ("QuickSabd",2,1)]
+      odds = [ ("Thunder",3,2), ("QuickSand",2,1)]
 
+  currentTime <- getTime
+
+  house1 <- submit gambleking do
+    createCmd House with
+      bookie = gambleking
+      registeredBettors = bettors
+
+  match1 <- submit matchqueen do
+    createCmd Match with
+      admin = matchqueen
+      bookie = gambleking
+      competitors = ["Thunder", "Quicksand"]
+      time = currentTime
+  
+  submit gambleking do
+    exerciseCmd match1 CreateBetSlip with 
+      odds = odds
+
+  -- BetSlip Test Script below ---------------------
   firstSlip <- submit gambleking do
     createCmd BetSlip with
       bookie  = gambleking
       odds  = odds
       bettors = bettors
+      matchCID = match1
 
   --  Happy Path 
 

@@ -10,6 +10,8 @@ template House
   where
     signatory bookie
     observer registeredBettors
+    key bookie : Party
+    maintainer key
 
     choice AddBettor : ContractId House
       with
