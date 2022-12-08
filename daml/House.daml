@@ -67,9 +67,6 @@ template GamblingAccountProposal
       controller gamblingAccountAgreement.bettor
       do  
         create gamblingAccountAgreement
-          with
-            bookie = gamblingAccountAgreement.bookie
-            bettor = gamblingAccountAgreement.bettor
 
 
 template GamblingAccountAgreement
@@ -89,6 +86,10 @@ template GamblingAccountAgreement
             bookie = bookie
             bettor = bettor
             amount = amount
+
+-- add a bank account template as well as an asset template to represent assets within that bank account
+-- talk about relevance of amount in gambling account and why it is needed in workflow in final presentation
+-- can use IOU to represent cash
 
 
 setup : Script ()

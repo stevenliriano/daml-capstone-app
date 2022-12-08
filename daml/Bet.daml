@@ -12,6 +12,7 @@ template Bet
     bettor    : Party
     pick      : Text
     amount    : Decimal
+    -- store BetSlip contractID here or carry key fields from BetSlip to establish relationship between Bet and BetSlip
   where
     signatory  bettor       --the responsibility of the bet is on Alice 
     observer   bookie       --the bookie can access the archived bet in case there is a dispute 
