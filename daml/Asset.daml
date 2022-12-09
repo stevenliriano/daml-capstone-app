@@ -1,6 +1,8 @@
 module Asset where
 
 import Daml.Script
+import DA.Assert
+import DA.Optional
 
 data AssetType = AssetType with
     -- The issuer of the asset.
@@ -17,6 +19,7 @@ template Asset
     amount : Decimal
   where
     signatory assetType.issuer, owner
+    ensure amount>0.0
 
 template AssetTransfer
   with
@@ -25,6 +28,7 @@ template AssetTransfer
   where
     signatory (signatory asset)
     observer recipient
+    ensure asset.amount>0.0
 
     choice Accept_Transfer : ContractId Asset
       controller recipient, asset.assetType.issuer
@@ -46,5 +50,68 @@ setup = script do
   gambleunionId <- validateUserId "gambleunion"
   gamblekingId <- validateUserId "gambleking"
 -- user_setup_end
+
+  let
+    gamble_tkn = AssetType with
+      issuer = gambleunion
+      symbol = "GBL"
+
+  -- Cannot mint asset with zero amount
+  submitMustFail gambleunion do
+    createCmd Asset with
+      assetType = gamble_tkn
+      owner = gambleunion
+      amount = 0.0
+
+  -- Cannot issue asset with amount less than zero
+  submitMustFail gambleunion do
+    createCmd Asset with
+      assetType = gamble_tkn
+      owner = gambleunion
+      amount = -10.0
+
+  -- Cannot issue asset on behalf of someone else
+  submitMustFail gambleunion do
+    createCmd Asset with
+      assetType = gamble_tkn
+      owner = alice
+      amount = 10.0
+
+  -- Non-issuer cannot issue asset
+  submitMustFail alice do
+    createCmd Asset with
+      assetType = gamble_tkn
+      owner = alice
+      amount = 10.0
+
+  asset1Cid <- submit gambleunion do 
+    createCmd Asset with
+      assetType = gamble_tkn
+      owner = gambleunion
+      amount = 10.0
+  
+  asset1 <- queryContractId gambleunion asset1Cid
+  let asset = fromSome asset1
+
+  assetTransfer1Cid <- submit gambleunion do
+    createCmd AssetTransfer with
+      asset = asset
+      recipient = alice 
+
+  -- Cannot accept via Accept_transfer
+    -- Asset issuer or owner cannot accept transfer by calling Accept_Transfer choice on Asset contract
+  submitMustFail gambleunion do
+    exerciseCmd assetTransfer1Cid Accept_Transfer
+  submitMustFail alice do
+    exerciseCmd assetTransfer1Cid Accept_Transfer
+
+  -- Verify contract on ledger
+  proposals <- query @Asset gambleunion
+  assertEq [Asset {assetType = AssetType {issuer = gambleunion, symbol = "GBL"}, owner = gambleunion, amount = 10.0}] (map snd proposals)
+
+  -- Verify privacy of gambleunion's asset contract
+  -- bob cannot see any contracts
+  proposals <- query @Asset bob
+  assertEq [] (map snd proposals)
 
   pure()

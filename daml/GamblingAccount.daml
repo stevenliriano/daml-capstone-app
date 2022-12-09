@@ -29,9 +29,13 @@ template GamblingAccount
     bookie : Party
     owner : Party
   where
-      signatory assetType.issuer, bookie, owner
+      signatory assetType.issuer, owner
+      observer bookie
+      ensure assetType.issuer /= bookie 
+      -- CONSIDERATION: issuer cannot be a bookie because then they 
+      -- could issue themselves unlimited funds to eventually beat out all bettora
       key (assetType, bookie, owner) : (AssetType, Party, Party)
-      maintainer key._2
+      maintainer key._3
       -- CONSIDERATION: we made it so that a bettor
       -- can only have one GamblingAccount contract for a particular currency with a particular bookie
       -- so that each GamblingAccount contract can be uniquely identified by the key above
@@ -46,6 +50,39 @@ template GamblingAccount
           create GamblingAccountProposal with
             gamblingAccount = this
             newBettor
+
+      -- This choice consolidates the input set of assets in the account and from the total amount
+      -- creates new set of Asset contracts in the desired input amounts plus one more Asset with the remaining amount
+      -- The purpose is to create Asset contracts in desired denomination from the list of assets in the account
+      nonconsuming choice Merge_Split : [ContractId Asset]
+        with
+          -- The list of assets to consolidate
+          assetCids : [ContractId Asset]
+          -- The desired amounts of the output assets
+          outputAmounts : [Decimal]
+        controller owner
+        do
+          totAssetAmount <- validateTxInputs assetCids self $ sum outputAmounts
+          forA_ assetCids archive
+          let
+            createOutputAssets assetsList amt = do
+              assertMsg "Each output asset amount must be positive" $
+                amt > 0.0
+              a <- create Asset with
+                assetType
+                owner
+                amount = amt
+              return $ a :: assetsList
+          outputAssetCids <- foldlA createOutputAssets [] outputAmounts
+          if (totAssetAmount > sum outputAmounts)
+          then do 
+            a <- create Asset with
+              assetType
+              owner
+              amount = (totAssetAmount - sum outputAmounts)
+            return $ a :: outputAssetCids
+          else
+            return outputAssetCids
 
       -- CONSIDERATION: for simplicity's sake we made it so that a GamblingAccount owner 
       -- could only create one transfer at a time
@@ -90,7 +127,7 @@ template GamblingAccountProposal
     gamblingAccount : GamblingAccount
     newBettor : Party
   where
-    signatory gamblingAccount.bookie
+    signatory gamblingAccount.assetType.issuer
     observer newBettor
 
     choice AcceptGamblingAccountProposal : ContractId GamblingAccount
@@ -113,5 +150,20 @@ setup = script do
   gambleunionId <- validateUserId "gambleunion"
   gamblekingId <- validateUserId "gambleking"
 -- user_setup_end
+
+  let
+    gamble_tkn = AssetType with
+      issuer = gambleunion
+      symbol = "GBL"
+
+  asset1Cid <- submit gambleunion do 
+    createCmd Asset with
+      assetType = gamble_tkn
+      owner = gambleunion
+      amount = 10.0
+
+  
+
+
 
   pure()
