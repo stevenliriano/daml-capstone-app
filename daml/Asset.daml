@@ -1,0 +1,50 @@
+module Asset where
+
+import Daml.Script
+
+data AssetType = AssetType with
+    -- The issuer of the asset.
+    issuer: Party
+    -- A symbol for the asset. Uniquely identifies the type of asset amongst
+    -- those issued by the issuer
+    symbol: Text    
+  deriving (Eq, Show)
+
+template Asset
+  with
+    assetType : AssetType
+    owner : Party
+    amount : Decimal
+  where
+    signatory assetType.issuer, owner
+
+template AssetTransfer
+  with
+    asset : Asset
+    recipient : Party
+  where
+    signatory (signatory asset)
+    observer recipient
+
+    choice Accept_Transfer : ContractId Asset
+      controller recipient, asset.assetType.issuer
+      do
+        create asset with
+          owner = recipient
+
+setup : Script ()
+setup = script do
+-- user_setup_begin
+  alice <- allocatePartyWithHint "Alice" (PartyIdHint "Alice")
+  bob   <- allocatePartyWithHint "Bob" (PartyIdHint "Bob")
+  charlie   <- allocatePartyWithHint "Charlie" (PartyIdHint "Charlie")
+  gambleunion <- allocatePartyWithHint "GambleUnion" (PartyIdHint "GambleUnion")
+  gambleking <- allocatePartyWithHint "GambleKing" (PartyIdHint "GambleKing")
+  aliceId <- validateUserId "alice"
+  bobId <- validateUserId "bob"
+  charlieId <- validateUserId "charlie"
+  gambleunionId <- validateUserId "gambleunion"
+  gamblekingId <- validateUserId "gambleking"
+-- user_setup_end
+
+  pure()

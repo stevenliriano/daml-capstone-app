@@ -1,19 +1,24 @@
 module House where
 
 import Daml.Script
+import GamblingAccount
 
 -- TODO: Include comment to explain templates below for those who are not up to date on the code
 
 template House
   with
     bookie : Party
+    gamblingAccount  : GamblingAccount
     registeredBettors : [Party]
-    -- gamblingAccount  : ContractId GamblingAccount -- TODO: uncomment this once GamblingAccount is implemented
   where
     signatory bookie
     observer registeredBettors
     key bookie : Party
     maintainer key
+    -- CONSIDERATION: we made it so that the bookie 
+    -- can only create one House contract so that 
+    -- each House contract can be uniquely identified by the bookie as the key
+    -- TODO: add ensure statement to ensure bookie does not already have a House contract
 
     choice AddBettor : ContractId GamblingAccountProposal
       with
@@ -23,69 +28,20 @@ template House
         let registeredBettorsUpdated = newBettor :: registeredBettors
         create House with
           bookie
+          gamblingAccount
           registeredBettors = registeredBettorsUpdated
 
         create GamblingAccountProposal with
-          gamblingAccountAgreement = GamblingAccountAgreement
+          gamblingAccount = GamblingAccount
             with
+              assetType = gamblingAccount.assetType
               bookie = bookie
-              bettor = newBettor
+              owner = newBettor
+          newBettor = newBettor
 
           -- gamblingAccount -- TODO: uncomment this once GamblingAccount is implemented
 
-template GamblingAccount
-  with
-    bookie : Party
-    bettor : Party
-    amount : Decimal
-  where
-      signatory bookie, bettor
-      key (bookie, bettor) : (Party, Party)
-      maintainer key._2
 
-      choice UpdateFunds : ContractId GamblingAccount
-          with
-              amountDelta : Decimal -- Currently allowing for negative decimals to be 
-                                      -- inputted to subtract funds from account. Is this correct?
-          controller bookie, bettor
-          do
-              create GamblingAccount 
-                  with
-                      bookie = bookie
-                      bettor = bettor
-                      amount = amount + amountDelta
-
-
-template GamblingAccountProposal
-  with
-    gamblingAccountAgreement : GamblingAccountAgreement
-  where
-    signatory gamblingAccountAgreement.bookie
-    observer gamblingAccountAgreement.bettor
-
-    choice AcceptGamblingAccountProposal : ContractId GamblingAccountAgreement
-      controller gamblingAccountAgreement.bettor
-      do  
-        create gamblingAccountAgreement
-
-
-template GamblingAccountAgreement
-  with
-    bookie : Party
-    bettor : Party
-  where
-    signatory bookie, bettor
-    
-    choice CreateGamblingAccount : ContractId GamblingAccount
-      with
-        amount : Decimal
-      controller bookie
-      do
-        create GamblingAccount
-          with
-            bookie = bookie
-            bettor = bettor
-            amount = amount
 
 -- add a bank account template as well as an asset template to represent assets within that bank account
 -- talk about relevance of amount in gambling account and why it is needed in workflow in final presentation
@@ -98,32 +54,42 @@ setup = script do
   alice <- allocatePartyWithHint "Alice" (PartyIdHint "Alice")
   bob   <- allocatePartyWithHint "Bob" (PartyIdHint "Bob")
   charlie   <- allocatePartyWithHint "Charlie" (PartyIdHint "Charlie")
+  gambleunion <- allocatePartyWithHint "GambleUnion" (PartyIdHint "GambleUnion")
   gambleking <- allocatePartyWithHint "GambleKing" (PartyIdHint "GambleKing")
   aliceId <- validateUserId "alice"
   bobId <- validateUserId "bob"
   charlieId <- validateUserId "charlie"
+  gambleunionId <- validateUserId "gambleunion"
   gamblekingId <- validateUserId "gambleking"
 -- user_setup_end
 
   let bettors = [alice, bob]
 
-  houseHandle <- submit gambleking do
-    createCmd House with
-      bookie = gambleking
-      registeredBettors = bettors
 
---  Happy Path 
+  -- cash1 <- submit federalreserve do
+  --   createCmd Cash with
+  --     issuer = federalreserve
+  --     owner = federalreserve
+  --     amount = 500.0
 
--- Charlie would create Gambling Account here
+  -- houseHandle <- submit gambleking do
+  --   createCmd House with
+  --     bookie = gambleking
+  --     gamblingAccount = 
+  --     registeredBettors = bettors
 
-  gamblingAccountProposal1 <- submit gambleking do
-    exerciseCmd houseHandle AddBettor with 
-      newBettor = charlie
+  -- -- Happy Path 
 
-  gamblingAccountAgreement1 <- submit charlie do
-    exerciseCmd gamblingAccountProposal1 AcceptGamblingAccountProposal
+  -- -- Charlie would create Gambling Account here
+
+  -- gamblingAccountProposal1 <- submit gambleking do
+  --   exerciseCmd houseHandle AddBettor with 
+  --     newBettor = charlie
+
+  -- gamblingAccountAgreement1 <- submit charlie do
+  --   exerciseCmd gamblingAccountProposal1 AcceptGamblingAccountProposal
  
-  submit gambleking do
-    exerciseCmd gamblingAccountAgreement1 (CreateGamblingAccount 500.0)
+  -- submit gambleking do
+  --   exerciseCmd gamblingAccountAgreement1 (CreateGamblingAccount 500.0)
 
   pure()

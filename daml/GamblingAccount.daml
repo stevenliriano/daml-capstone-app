@@ -1,67 +1,117 @@
 module GamblingAccount where
 
 import Daml.Script
+import DA.Action
+import DA.Foldable (forA_)
+import Asset
+
+-- This function validates whether the list of input assets can be merged and then split for use in
+-- the Merge_Split and Create_Transfer choices of GamblingAccount template
+-- If the assets can be merged and the total amount is sufficient to split it into outputAmounts, then
+-- the function returns the total amount of input assets. Otherwise the action fails.
+validateTxInputs: [ContractId Asset] -> ContractId GamblingAccount -> Decimal -> Update Decimal
+validateTxInputs assetCids accountCid outputAmount = do
+  account <- fetch accountCid
+  totAssetAmount <- sum <$> forA assetCids \assetCid -> do
+    asset <- fetch assetCid
+    assertMsg "Issuer mismatch between asset and account" $
+      asset.assetType == account.assetType
+    assertMsg "Owner mismatch between asset and account" $
+      asset.owner == account.owner
+    return asset.amount
+  assertMsg "Insufficient funds passed to create all output assets" $
+    totAssetAmount >= outputAmount
+  return totAssetAmount
 
 template GamblingAccount
-    with
-        bookie : Party
-        owner : Party
-        amount : Decimal
-    where
-        signatory bookie, owner
-        key (bookie, owner) : (Party, Party)
-        maintainer key._2
+  with
+    assetType : AssetType
+    bookie : Party
+    owner : Party
+  where
+      signatory assetType.issuer, bookie, owner
+      key (assetType, bookie, owner) : (AssetType, Party, Party)
+      maintainer key._2
+      -- CONSIDERATION: we made it so that a bettor
+      -- can only have one GamblingAccount contract for a particular currency with a particular bookie
+      -- so that each GamblingAccount contract can be uniquely identified by the key above
+      -- TODO: add ensure statement to ensure bettor does not already have a GamblingAccount contract 
+      -- with the issuer and bookie
 
-        choice UpdateFunds : ContractId GamblingAccount
-            with
-                amountDelta : Decimal -- Currently allowing for negative decimals to be 
-                                        -- inputted to subtract funds from account. Is this correct?
-            controller bookie, owner
-            do
-                create GamblingAccount 
-                    with
-                        bookie = bookie
-                        owner = owner
-                        amount = amount + amountDelta
+      nonconsuming choice Invite_New_Owner : ContractId GamblingAccountProposal
+        with
+          newBettor : Party
+        controller bookie
+        do 
+          create GamblingAccountProposal with
+            gamblingAccount = this
+            newBettor
 
-setup : Script() 
+      -- CONSIDERATION: for simplicity's sake we made it so that a GamblingAccount owner 
+      -- could only create one transfer at a time
+      nonconsuming choice Create_Transfer : ()
+        with 
+          assetCids : [ContractId Asset]
+          recipient : Party
+          amount : Decimal
+        controller owner
+        do
+          totAssetAmount <- validateTxInputs assetCids self amount
+          forA_ assetCids archive
+          create AssetTransfer with
+            asset = Asset with
+              assetType
+              owner
+              amount
+            recipient
+          when (totAssetAmount > amount) do
+            create Asset with
+              assetType
+              owner
+              amount = totAssetAmount - amount
+            return()
+
+      -- The purpose of this choice is to obtain issuer's authority required to accept the transfer.
+      -- This construct ensures that transfers cannot be made to a party without a GamblingAccount corresponding to the asset
+      nonconsuming choice Deposit_Transfer_Into_Account : ContractId Asset
+        with
+          transferCid : ContractId AssetTransfer
+        controller owner 
+        do
+          transfer <- fetch transferCid
+          assertMsg "Issuer mismatch between transfer asset and account" $
+            transfer.asset.assetType == assetType
+          assertMsg "Mismatch between account owner and transfer recipient" $
+            transfer.recipient == owner
+          exercise transferCid Accept_Transfer
+
+template GamblingAccountProposal
+  with
+    gamblingAccount : GamblingAccount
+    newBettor : Party
+  where
+    signatory gamblingAccount.bookie
+    observer newBettor
+
+    choice AcceptGamblingAccountProposal : ContractId GamblingAccount
+      controller newBettor
+      do  
+        create gamblingAccount with
+          owner = newBettor
+
+setup : Script ()
 setup = script do
 -- user_setup_begin
-  alice    <- allocatePartyWithHint "Alice" (PartyIdHint "Alice")
-  bob      <- allocatePartyWithHint "Bob" (PartyIdHint "Bob")
-  charlie  <- allocatePartyWithHint "Charlie" (PartyIdHint "Charlie")
-  matchqueen <- allocatePartyWithHint "MatchQueen" (PartyIdHint "MatchQueen")
+  alice <- allocatePartyWithHint "Alice" (PartyIdHint "Alice")
+  bob   <- allocatePartyWithHint "Bob" (PartyIdHint "Bob")
+  charlie   <- allocatePartyWithHint "Charlie" (PartyIdHint "Charlie")
+  gambleunion <- allocatePartyWithHint "GambleUnion" (PartyIdHint "GambleUnion")
   gambleking <- allocatePartyWithHint "GambleKing" (PartyIdHint "GambleKing")
   aliceId <- validateUserId "alice"
-  bobId   <- validateUserId "bob"
+  bobId <- validateUserId "bob"
   charlieId <- validateUserId "charlie"
-  matchqueenId <- validateUserId "matchqueen"
+  gambleunionId <- validateUserId "gambleunion"
   gamblekingId <- validateUserId "gambleking"
 -- user_setup_end
 
-  account1 <- submit gambleking do
-    createCmd GamblingAccount with
-        bookie = gambleking
-        owner = gambleking
-        amount = 500.0
-
   pure()
-
-
-
---   house1 <- submit gambleking do
---     createCmd House with
---       bookie = gambleking
---       registeredBettors = bettors
-
---   match1 <- submit matchqueen do
---     createCmd Match with
---       admin = matchqueen
---       bookie = gambleking
---       competitors = ["Thunder", "Quicksand"]
---       time = currentTime
-  
---   firstSlip <-submit gambleking do
---     exerciseCmd match1 CreateBetSlip with 
---       odds = [ ("Thunder",3,2), ("QuickSand",2,1)]
-
