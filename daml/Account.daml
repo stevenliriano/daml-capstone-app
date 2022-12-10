@@ -111,17 +111,27 @@ template HouseAgreement
                 bookieAcctProposalCid <- exercise gamblersUnionCid AddBookie with
                     newBookie = bookie
 
-                unionAcctWithNewBookieCid <- create GamblingAccount with
-                    assetType = assetType
+                unionAcctProposalCid <- create GamblingAccountProposal with
+                  gamblingAccountAgreement = GamblingAccountAgreement with
+                    assetType
                     bookie
                     owner = assetType.issuer
 
-                bookieAcctProposalCid <- exercise unionAcctWithNewBookieCid Invite_New_Owner with
+                unionAcctAgreementCid <- exercise unionAcctProposalCid AcceptGamblingAccountProposal
+
+                unionAcctCid <- exercise unionAcctAgreementCid Create_Gambling_Account
+
+                -- unionAcctCid1 <- create GamblingAccount with
+                --     assetType = assetType
+                --     bookie
+                --     owner = assetType.issuer
+
+                bookieAcctProposalCid <- exercise unionAcctCid Invite_New_Owner with
                     newBettor = bookie
 
                 bookieAcctAgreementCid <- exercise bookieAcctProposalCid AcceptGamblingAccountProposal
 
-                bookieAcct <- exercise bookieAcctAgreementCid Create_Gambling_Account
+                bookieAcctCid <- exercise bookieAcctAgreementCid Create_Gambling_Account
 
                 create House with
                     bookie
@@ -259,18 +269,18 @@ template GamblingAccountAgreement
         choice Create_Gambling_Account : ContractId GamblingAccount
             controller assetType.issuer
             do
-                if (owner /= bookie) 
-                then do 
-                    (houseContractId, house) <- fetchByKey @House (bookie, assetType)
-                    bookieAcctProposalCid <- exercise houseContractId AddBettor with
-                        newBettor = owner
-                    pure()
-                else pure()
+              if (owner /= assetType.issuer && owner /= bookie) 
+              then do 
+                  (houseContractId, house) <- fetchByKey @House (bookie, assetType)
+                  bookieAcctProposalCid <- exercise houseContractId AddBettor with
+                      newBettor = owner
+                  pure()
+              else pure()
 
-                create GamblingAccount with
-                    assetType
-                    bookie
-                    owner
+              create GamblingAccount with
+                  assetType
+                  bookie
+                  owner
 
 setup : Script ()
 setup = script do
@@ -294,11 +304,13 @@ setup = script do
       issuer = gambleunion
       symbol = "GBL"
 
+  -- create union
   gamblersUnion1 <- submit gambleunion do
     createCmd GamblersUnion with
       assetType = gamble_tkn
       registeredBookies = []
   
+  -- create house
   houseProposal1 <- submit gambleunion do
     exerciseCmd gamblersUnion1 (Create_House_Proposal gambleking)
 
@@ -311,6 +323,7 @@ setup = script do
   gamblekingAcctTuple <- queryContractKey @GamblingAccount gambleking (gamble_tkn, gambleking, gambleking)
   let (gamblekingAcctCid, gamblekingAcct) = fromSome gamblekingAcctTuple
 
+  -- create alice account
   aliceAcctProposal <- submit gambleking do
     exerciseCmd gamblekingAcctCid (Invite_New_Owner alice)
 
@@ -319,5 +332,15 @@ setup = script do
 
   aliceAcct <- submit gambleunion do
     exerciseCmd aliceAcctAgreement Create_Gambling_Account
+
+  -- create bob account
+  bobAcctProposal <- submit gambleking do
+    exerciseCmd gamblekingAcctCid (Invite_New_Owner bob)
+
+  bobAcctAgreement <- submit bob do
+    exerciseCmd bobAcctProposal AcceptGamblingAccountProposal
+
+  bobAcct <- submit gambleunion do
+    exerciseCmd bobAcctAgreement Create_Gambling_Account
 
   pure()
