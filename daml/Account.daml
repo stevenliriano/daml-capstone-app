@@ -1,0 +1,323 @@
+module Account where
+
+import Daml.Script
+import DA.Action
+import DA.Foldable (forA_)
+import DA.Optional
+import Asset
+
+-- This function validates whether the list of input assets can be merged and then split for use in
+-- the Merge_Split and Create_Transfer choices of GamblingAccount template
+-- If the assets can be merged and the total amount is sufficient to split it into outputAmounts, then
+-- the function returns the total amount of input assets. Otherwise the action fails.
+validateTxInputs: [ContractId Asset] -> ContractId GamblingAccount -> Decimal -> Update Decimal
+validateTxInputs assetCids accountCid outputAmount = do
+  account <- fetch accountCid
+  totAssetAmount <- sum <$> forA assetCids \assetCid -> do
+    asset <- fetch assetCid
+    assertMsg "Issuer mismatch between asset and account" $
+      asset.assetType == account.assetType
+    assertMsg "Owner mismatch between asset and account" $
+      asset.owner == account.owner
+    return asset.amount
+  assertMsg "Insufficient funds passed to create all output assets" $
+    totAssetAmount >= outputAmount
+  return totAssetAmount
+
+-- TODO: Include comment to explain templates below for those who are not up to date on the code
+template GamblersUnion
+  with
+    assetType : AssetType -- CONSIDERATION: Relationship between Issuer to AssetType to GamblersUnion is 1:1:1
+                          -- TODO: Enforce it
+    registeredBookies : [Party]
+  where 
+    signatory assetType.issuer
+    key assetType : AssetType
+    maintainer key.issuer
+
+    nonconsuming choice Create_House_Proposal : ContractId HouseProposal
+      with
+        newBookie : Party
+      controller assetType.issuer
+      do
+        create HouseProposal with
+          houseAgreement = HouseAgreement
+            with
+              bookie = newBookie
+              assetType = assetType
+
+    choice AddBookie : ContractId GamblersUnion
+      with
+        newBookie : Party
+      controller assetType.issuer
+      do
+        let registeredBookiesUpdated = newBookie :: registeredBookies
+        create GamblersUnion with
+          assetType
+          registeredBookies = registeredBookiesUpdated
+
+template House
+  with
+    bookie : Party
+    assetType: AssetType
+    registeredBettors : [Party]
+  where
+    signatory assetType.issuer
+    observer registeredBettors
+    key (bookie, assetType) : (Party, AssetType)
+    maintainer key._2.issuer
+    -- CONSIDERATION: we made it so that the bookie 
+    -- can only create one House contract so that 
+    -- each House contract can be uniquely identified by the bookie as the key
+    -- TODO: add ensure statement to ensure bookie does not already have a House contract
+
+    choice AddBettor : ContractId House
+      with
+        newBettor : Party
+      controller bookie
+      do
+        let registeredBettorsUpdated = newBettor :: registeredBettors
+        create House with
+          bookie
+          assetType
+          registeredBettors = registeredBettorsUpdated
+
+        -- make it so that this happens for both house and gamblersunion upon accept in propose accept
+
+template HouseProposal
+  with
+    houseAgreement : HouseAgreement
+  where
+    signatory houseAgreement.assetType.issuer
+    observer houseAgreement.bookie
+
+    choice HouseProposal_Accept : ContractId HouseAgreement
+      controller houseAgreement.bookie
+      do create houseAgreement
+
+template HouseAgreement
+    with
+        assetType : AssetType
+        bookie : Party
+    where
+        signatory assetType.issuer, bookie
+
+        -- CONSIDERATION: Doing this here rather than in HouseProposal_Accept
+        -- so that the issuer can exercise AddBookie choice on GamblersUnion contract
+        choice Create_House : ContractId House
+            controller assetType.issuer
+            do
+                (gamblersUnionCid, gamblersUnion) <- fetchByKey @GamblersUnion assetType
+                bookieAcctProposalCid <- exercise gamblersUnionCid AddBookie with
+                    newBookie = bookie
+
+                unionAcctWithNewBookieCid <- create GamblingAccount with
+                    assetType = assetType
+                    bookie
+                    owner = assetType.issuer
+
+                bookieAcctProposalCid <- exercise unionAcctWithNewBookieCid Invite_New_Owner with
+                    newBettor = bookie
+
+                bookieAcctAgreementCid <- exercise bookieAcctProposalCid AcceptGamblingAccountProposal
+
+                bookieAcct <- exercise bookieAcctAgreementCid Create_Gambling_Account
+
+                create House with
+                    bookie
+                    assetType
+                    registeredBettors = []
+
+template GamblingAccount
+  with
+    assetType : AssetType
+    bookie : Party
+    owner : Party
+  where
+    signatory assetType.issuer, owner
+    observer bookie
+    ensure assetType.issuer /= bookie 
+    -- CONSIDERATION: issuer cannot be a bookie because then they 
+    -- could issue themselves unlimited funds to eventually beat out all bettora
+    key (assetType, bookie, owner) : (AssetType, Party, Party)
+    maintainer key._3
+    -- CONSIDERATION: we made it so that a bettor
+    -- can only have one GamblingAccount contract for a particular currency with a particular bookie
+    -- so that each GamblingAccount contract can be uniquely identified by the key above
+    -- TODO: add ensure statement to ensure bettor does not already have a GamblingAccount contract 
+    -- with the issuer and bookie
+
+    nonconsuming choice Invite_New_Owner : ContractId GamblingAccountProposal
+      with
+        newBettor : Party
+      controller bookie
+      do 
+        create GamblingAccountProposal with
+          gamblingAccountAgreement = GamblingAccountAgreement with
+            assetType
+            bookie
+            owner = newBettor
+
+    -- This choice consolidates the input set of assets in the account and from the total amount
+    -- creates new set of Asset contracts in the desired input amounts plus one more Asset with the remaining amount
+    -- The purpose is to create Asset contracts in desired denomination from the list of assets in the account
+    nonconsuming choice Merge_Split : [ContractId Asset]
+      with
+        -- The list of assets to consolidate
+        assetCids : [ContractId Asset]
+        -- The desired amounts of the output assets
+        outputAmounts : [Decimal]
+      controller owner
+      do
+        totAssetAmount <- validateTxInputs assetCids self $ sum outputAmounts
+        forA_ assetCids archive
+        let
+          createOutputAssets assetsList amt = do
+            assertMsg "Each output asset amount must be positive" $
+              amt > 0.0
+            a <- create Asset with
+              assetType
+              owner
+              amount = amt
+            return $ a :: assetsList
+        outputAssetCids <- foldlA createOutputAssets [] outputAmounts
+        if (totAssetAmount > sum outputAmounts)
+        then do 
+          a <- create Asset with
+            assetType
+            owner
+            amount = (totAssetAmount - sum outputAmounts)
+          return $ a :: outputAssetCids
+        else
+          return outputAssetCids
+
+    -- The purpose of this choice is to allow client application to create a set of transfer proposals using multiple Asset 
+    -- contracts held in the account. Client application can query for all active Asset contracts, where assetType and owner 
+    -- match between Asset and AssetHoldingAccount, which represent assets held in the account.
+    -- Then the list of Asset contract Ids can be passed to this choice allowing the transfer proposals to be created
+    -- as long as the total amount of all transfers is less than the total amount of assets passed to the choice.
+    nonconsuming choice Create_Transfers : ()
+      with 
+        assetCids : [ContractId Asset]
+        transfers : [(Decimal, Party)]
+      controller owner
+      do
+        let (txAmounts, txRecipients) = unzip transfers
+        totAssetAmount <- validateTxInputs assetCids self $ sum txAmounts
+        forA_ assetCids archive
+        forA_ transfers (\tx -> do
+          assertMsg "Each transfer amount must be positive" $
+            tx._1 > 0.0
+          create AssetTransfer with
+            asset = Asset with
+              assetType
+              owner
+              amount = tx._1
+            recipient = tx._2
+          )
+        when (totAssetAmount > sum txAmounts) do
+          create Asset with
+            assetType
+            owner
+            amount = (totAssetAmount - sum txAmounts)
+          return()
+
+    -- The purpose of this choice is to obtain issuer's authority required to accept the transfer.
+    -- This construct ensures that transfers cannot be made to a party without a GamblingAccount corresponding to the asset
+    nonconsuming choice Deposit_Transfer_Into_Account : ContractId Asset
+      with
+        transferCid : ContractId AssetTransfer
+      controller owner 
+      do
+        transfer <- fetch transferCid
+        assertMsg "Issuer mismatch between transfer asset and account" $
+          transfer.asset.assetType == assetType
+        assertMsg "Mismatch between account owner and transfer recipient" $
+          transfer.recipient == owner
+        exercise transferCid Accept_Transfer
+
+template GamblingAccountProposal
+  with
+    gamblingAccountAgreement : GamblingAccountAgreement
+  where
+    signatory gamblingAccountAgreement.bookie
+    observer gamblingAccountAgreement.owner
+
+    choice AcceptGamblingAccountProposal : ContractId GamblingAccountAgreement
+      controller gamblingAccountAgreement.owner
+      do create gamblingAccountAgreement
+
+template GamblingAccountAgreement
+    with
+        assetType : AssetType
+        bookie : Party
+        owner : Party
+    where
+        signatory bookie, owner
+        observer assetType.issuer
+
+        choice Create_Gambling_Account : ContractId GamblingAccount
+            controller assetType.issuer
+            do
+                if (owner /= bookie) 
+                then do 
+                    (houseContractId, house) <- fetchByKey @House (bookie, assetType)
+                    bookieAcctProposalCid <- exercise houseContractId AddBettor with
+                        newBettor = owner
+                    pure()
+                else pure()
+
+                create GamblingAccount with
+                    assetType
+                    bookie
+                    owner
+
+setup : Script ()
+setup = script do
+-- user_setup_begin
+  alice <- allocatePartyWithHint "Alice" (PartyIdHint "Alice")
+  bob   <- allocatePartyWithHint "Bob" (PartyIdHint "Bob")
+  charlie   <- allocatePartyWithHint "Charlie" (PartyIdHint "Charlie")
+  gambleunion <- allocatePartyWithHint "GambleUnion" (PartyIdHint "GambleUnion")
+  gambleking <- allocatePartyWithHint "GambleKing" (PartyIdHint "GambleKing")
+  aliceId <- validateUserId "alice"
+  bobId <- validateUserId "bob"
+  charlieId <- validateUserId "charlie"
+  gambleunionId <- validateUserId "gambleunion"
+  gamblekingId <- validateUserId "gambleking"
+-- user_setup_end
+
+  let bettors = [alice, bob]
+
+  let
+    gamble_tkn = AssetType with
+      issuer = gambleunion
+      symbol = "GBL"
+
+  gamblersUnion1 <- submit gambleunion do
+    createCmd GamblersUnion with
+      assetType = gamble_tkn
+      registeredBookies = []
+  
+  houseProposal1 <- submit gambleunion do
+    exerciseCmd gamblersUnion1 (Create_House_Proposal gambleking)
+
+  houseAgreement1 <- submit gambleking do 
+    exerciseCmd houseProposal1 HouseProposal_Accept
+
+  house1 <- submit gambleunion do
+    exerciseCmd houseAgreement1 Create_House
+
+  gamblekingAcctTuple <- queryContractKey @GamblingAccount gambleking (gamble_tkn, gambleking, gambleking)
+  let (gamblekingAcctCid, gamblekingAcct) = fromSome gamblekingAcctTuple
+
+  aliceAcctProposal <- submit gambleking do
+    exerciseCmd gamblekingAcctCid (Invite_New_Owner alice)
+
+  aliceAcctAgreement <- submit alice do
+    exerciseCmd aliceAcctProposal AcceptGamblingAccountProposal
+
+  aliceAcct <- submit gambleunion do
+    exerciseCmd aliceAcctAgreement Create_Gambling_Account
+
+  pure()
