@@ -278,7 +278,7 @@ template GamblingAccountAgreement
               then do 
                   (houseContractId, house) <- fetchByKey @House (bookie, assetType)
                   bookieAcctProposalCid <- exercise houseContractId AddBettor with
-                      newBettor = owner
+                    newBettor = owner
                   pure()
               else pure()
 
