@@ -1,54 +1,219 @@
 module Bet where
 
 import Daml.Script
+import DA.Foldable (forA_)
+import DA.List
+import DA.Optional
+import DA.Assert
+import Account
+import Asset
 
-type BetId = ContractId Bet
-
--- TODO: Include comment to explain templates below for those who are not up to date on the code
-
-template Bet
+template Match
   with
-    bookie   : Party
-    bettor    : Party
-    pick      : Text
-    amount    : Decimal
-    -- store BetSlip contractID here or carry key fields from BetSlip to establish relationship between Bet and BetSlip
+    admin       : Party
+    gamblersUnion : GamblersUnion
+    competitors : (Text, Text)
+    time        : Time
   where
-    signatory  bettor       --the responsibility of the bet is on Alice 
-    observer   bookie       --the bookie can access the archived bet in case there is a dispute 
-                            --the bookie will consent to the bet by offering a bet slip 
+    signatory admin
+    observer gamblersUnion.registeredBookies
+    -- admin, competitors, time identifies a unique Match, and we will 
+    -- enforce that the bookie can only create one BetSlip per Match
+    key (admin, competitors, time) : (Party, (Text, Text), Time)
+    maintainer key._1
 
-    choice CancelBet : ()
-      controller bettor
+    nonconsuming choice CreateBetSlip : ContractId BetSlip
+      with
+        odds : [(Text, Decimal, Decimal)]
+        bookie : Party
+      controller bookie
+      do
+        (houseContractId, housePayload) <- fetchByKey @House (bookie, gamblersUnion.assetType) 
+        let bettors = housePayload.registeredBettors
+        create BetSlip with
+         admin = admin
+         bookie = bookie 
+         competitors = competitors
+         odds = odds
+         time = time        
+         bettors=bettors
+         gamblersUnion = gamblersUnion
+         betCids = []          
+
+    choice SettleMatch : ()
+      with
+        victor : Text
+      controller admin
+      do
+        forA_ gamblersUnion.registeredBookies (\bookie -> do
+          (betSlipContractID, betSlipPayload) <- fetchByKey @BetSlip (bookie, competitors, time)
+          exercise betSlipContractID (SettleBets victor)
+          )
+
+template BetSlip
+  with
+    admin         : Party
+    bookie        : Party
+    competitors   : (Text, Text)
+    odds          : [(Text,Decimal,Decimal)]      -- Tuple like Thunder, 3, 1 odds. 
+                                          -- First int in odds represents bettor's profit if they win, 
+                                          -- second int represents how much they bet. For example, if the odds are 3:1,
+                                          -- the bettor would bet $1 to win $3 profit, meaning they would win $4 total.
+    time          : Time
+    bettors       : [Party]
+    gamblersUnion : GamblersUnion
+    betCids : [ContractId Bet]                  
+  where
+    signatory bookie
+    observer bettors, admin -- Ask how we can allow bettors to exercise choices 
+                      -- on this contract without seeing each other as bettors
+    key (bookie, competitors, time) : (Party, (Text, Text), Time)
+    maintainer key._1
+    
+    choice PlaceHouseBet : ContractId Bet
+      with
+        betAmount : Decimal
+        betPick : Text
+        bettor: Party
+        bettorAssetCids: [ContractId Asset]
+        bookieAssetCids: [ContractId Asset]
+      controller bettor     
       do 
-      --return IOUs 
-       return ()            
-       
+        -- create two transfers 
+        (bettorGamblingAcctCid, bettorGamblingAcct) <- fetchByKey @GamblingAccount (gamblersUnion.assetType, bookie, bettor)
+        (bookieGamblingAcctCid, bookieGamblingAcct) <- fetchByKey @GamblingAccount (gamblersUnion.assetType, bookie, bookie)
 
-setup : Script BetId
+        bettorTransferCid <- exercise bettorGamblingAcctCid Create_Transfer with 
+          assetCids = bettorAssetCids 
+          transfer = (betAmount, bookie)
+
+        let competitorIndex = fromSome (findIndex (\competitorOdds -> competitorOdds._1 == betPick) odds)
+        let bookieBetAmount = (odds!!competitorIndex)._2 * betAmount + betAmount
+        bookieTransferCid <- exercise bookieGamblingAcctCid Create_Transfer with 
+          assetCids = bookieAssetCids 
+          transfer = (bookieBetAmount, bettor)
+
+        newBetCid <- create Bet with
+           bookie
+           bettor1 = bettor
+           bettor2 = None
+           bettor1pick = betPick
+           amount = betAmount
+           bookieAssetTransferCid = bookieTransferCid
+           bettor1AssetTransferCid = bettorTransferCid
+           bettor2AssetTransferCid = None
+
+        create this with
+            betCids = newBetCid :: betCids
+
+        return newBetCid
+
+    choice SettleBets: ()  
+      with 
+        victor : Text
+      controller admin
+      do 
+        -- -- ensure all bet contracts get archived
+        forA_ betCids (\betCid -> do
+            bet <- fetch betCid
+            (bettorAcctCid, bettorAcct) <- fetchByKey @GamblingAccount (gamblersUnion.assetType, bookie, bet.bettor1)
+            (bookieAcctCid, bookieAcct) <- fetchByKey @GamblingAccount (gamblersUnion.assetType, bookie, bookie)
+            if (victor == bet.bettor1pick)
+            then do
+                exercise bettorAcctCid Deposit_Transfer_Into_Account with
+                    transferCid = bet.bookieAssetTransferCid
+                exercise bet.bettor1AssetTransferCid Reject_Transfer
+            else do
+                exercise bookieAcctCid Deposit_Transfer_Into_Account with
+                    transferCid = bet.bettor1AssetTransferCid
+                exercise bet.bookieAssetTransferCid Reject_Transfer
+            )
+        pure()
+
+setup : Script() 
 setup = script do
 -- user_setup_begin
-  alice <- allocatePartyWithHint "Alice" (PartyIdHint "Alice")
-  bob   <- allocatePartyWithHint "Bob" (PartyIdHint "Bob")
+  alice    <- allocatePartyWithHint "Alice" (PartyIdHint "Alice")
+  bob      <- allocatePartyWithHint "Bob" (PartyIdHint "Bob")
+  charlie  <- allocatePartyWithHint "Charlie" (PartyIdHint "Charlie")
+  gambleunion <- allocatePartyWithHint "GambleUnion" (PartyIdHint "GambleUnion")
+  matchqueen <- allocatePartyWithHint "MatchQueen" (PartyIdHint "MatchQueen")
   gambleking <- allocatePartyWithHint "GambleKing" (PartyIdHint "GambleKing")
   aliceId <- validateUserId "alice"
-  bobId <- validateUserId "bob"
+  bobId   <- validateUserId "bob"
+  charlieId <- validateUserId "charlie"
+  gambleunionId <- validateUserId "gambleunion"
+  matchqueenId <- validateUserId "matchqueen"
   gamblekingId <- validateUserId "gambleking"
-  createUser (User aliceId (Some alice)) [CanActAs alice]
-  createUser (User bobId (Some alice)) [CanActAs bob]
-  createUser (User gamblekingId (Some gambleking)) [CanActAs gambleking]
+  
 -- user_setup_end
+  let bettors = [alice,bob]
+      odds = [ ("Thunder",3,2), ("QuickSand",2,1)]
 
-  submit alice do
-    createCmd Bet with
-      bookie  = gambleking
-      bettor  = alice
-      pick    = "Thunder"
-      amount  = 200.0
-     
+  currentTime <- getTime -- using getTime to get a valid UTC timestamp
+                          -- but we should really set time of matches to be an arbitrary timestamp in the future
+  
+  let
+    gamble_tkn = AssetType with
+      issuer = gambleunion
+      symbol = "GBL"
 
- 
+  -- Cannot mint asset with zero amount
+  submitMustFail gambleunion do
+    createCmd Asset with
+      assetType = gamble_tkn
+      owner = gambleunion
+      amount = 0.0
 
- 
+  -- Cannot issue asset with amount less than zero
+  submitMustFail gambleunion do
+    createCmd Asset with
+      assetType = gamble_tkn
+      owner = gambleunion
+      amount = -10.0
 
- 
+  -- Cannot issue asset on behalf of someone else
+  submitMustFail gambleunion do
+    createCmd Asset with
+      assetType = gamble_tkn
+      owner = alice
+      amount = 10.0
+
+  -- Non-issuer cannot issue asset
+  submitMustFail alice do
+    createCmd Asset with
+      assetType = gamble_tkn
+      owner = alice
+      amount = 10.0
+
+  asset1Cid <- submit gambleunion do 
+    createCmd Asset with
+      assetType = gamble_tkn
+      owner = gambleunion
+      amount = 10.0
+  
+  asset1 <- queryContractId gambleunion asset1Cid
+  let asset = fromSome asset1
+
+  assetTransfer1Cid <- submit gambleunion do
+    createCmd AssetTransfer with
+      asset = asset
+      recipient = alice 
+
+  -- Cannot accept via Accept_transfer
+    -- Asset issuer or owner cannot accept transfer by calling Accept_Transfer choice on Asset contract
+  submitMustFail gambleunion do
+    exerciseCmd assetTransfer1Cid Accept_Transfer
+  submitMustFail alice do
+    exerciseCmd assetTransfer1Cid Accept_Transfer
+
+  -- Verify contract on ledger
+  proposals <- query @Asset gambleunion
+  assertEq [Asset {assetType = AssetType {issuer = gambleunion, symbol = "GBL"}, owner = gambleunion, amount = 10.0}] (map snd proposals)
+
+  -- Verify privacy of gambleunion's asset contract
+  -- bob cannot see any contracts
+  proposals <- query @Asset bob
+  assertEq [] (map snd proposals)
+
+  pure()
