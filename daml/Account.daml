@@ -91,8 +91,17 @@ template House
           bookie
           assetType
           registeredBettors = registeredBettorsUpdated
-
-        -- make it so that this happens for both house and gamblersunion upon accept in propose accept
+    
+    nonconsuming choice Deposit_House_Fees : ()
+      with
+        transferCids : [ContractId AssetTransfer]
+      controller bookie
+      do
+        (bookieGamblingAcctCid, bookieGamblingAcct) <- fetchByKey @GamblingAccount (assetType, bookie, bookie)
+        forA_ transferCids (\transferCid -> do
+          exercise bookieGamblingAcctCid Deposit_Transfer_Into_Account with
+            transferCid
+          )
 
 template HouseProposal
   with

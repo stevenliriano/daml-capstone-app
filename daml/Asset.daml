@@ -45,7 +45,6 @@ template AssetTransfer
     choice Accept_Transfer : ContractId Asset
       controller recipient, asset.assetType.issuer
       do
-
         create asset with
           owner = recipient
 
