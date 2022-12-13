@@ -49,27 +49,6 @@ template AssetTransfer
         create asset with
           owner = recipient
 
-template Bet
-  with
-    bookie   : Party
-    bettor1    : Party
-    bettor2 : Optional Party
-    bettor1pick : Text
-    amount    : Decimal
-    bookieAssetTransferCid : ContractId AssetTransfer
-    bettor1AssetTransferCid : ContractId AssetTransfer
-    bettor2AssetTransferCid : Optional (ContractId AssetTransfer)
-
-  where
-    signatory  bettor1       --the responsibility of the bet is on Alice 
-    observer   bookie       --the bookie can access the archived bet in case there is a dispute 
-                            --the bookie will consent to the bet by offering a bet slip 
-
-    -- choice CancelBet : ()
-    --   controller bettor1
-    --   do
-    --    return ()  
-
 setup : Script ()
 setup = script do
 -- user_setup_begin
@@ -127,17 +106,17 @@ setup = script do
   asset1 <- queryContractId gambleunion asset1Cid
   let asset = fromSome asset1
 
-  -- assetTransfer1Cid <- submit gambleunion do
-  --   createCmd AssetTransfer with
-  --     asset = asset
-  --     recipient = alice 
+  assetTransfer1Cid <- submit gambleunion do
+    createCmd AssetTransfer with
+      asset = asset
+      recipient = alice 
 
   -- Cannot accept via Accept_transfer
-    -- Asset issuer or owner cannot accept transfer by calling Accept_Transfer choice on Asset contract
-  -- submitMustFail gambleunion do
-  --   exerciseCmd assetTransfer1Cid Accept_Transfer
-  -- submitMustFail alice do
-  --   exerciseCmd assetTransfer1Cid Accept_Transfer
+  -- Asset issuer or owner cannot accept transfer by calling Accept_Transfer choice on Asset contract
+  submitMustFail gambleunion do
+    exerciseCmd assetTransfer1Cid Accept_Transfer
+  submitMustFail alice do
+    exerciseCmd assetTransfer1Cid Accept_Transfer
 
   -- Verify contract on ledger
   proposals <- query @Asset gambleunion

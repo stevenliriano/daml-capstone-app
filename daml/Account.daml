@@ -73,7 +73,7 @@ template House
     registeredBettors : [Party]
   where
     signatory assetType.issuer
-    observer registeredBettors
+    observer bookie, registeredBettors
     key (bookie, assetType) : (Party, AssetType)
     maintainer key._2.issuer
     -- CONSIDERATION: we made it so that the bookie 
@@ -211,6 +211,32 @@ template GamblingAccount
     -- match between Asset and AssetHoldingAccount, which represent assets held in the account.
     -- Then the list of Asset contract Ids can be passed to this choice allowing the transfer proposals to be created
     -- as long as the total amount of all transfers is less than the total amount of assets passed to the choice.
+    nonconsuming choice Create_Transfers : ()
+      with
+        assetCids : [ContractId Asset]
+        transfers : [(Decimal, Party)]
+      controller owner
+      do
+        let (txAmounts, txRecipients) = unzip transfers
+        totAssetAmount <- validateTxInputs assetCids self $ sum txAmounts
+        forA_ assetCids archive
+        forA_ transfers (\tx -> do
+          assertMsg "Each transfer amount must be positive" $
+            tx._1 > 0.0
+          create AssetTransfer with
+            asset = Asset with
+              assetType
+              owner
+              amount = tx._1
+            recipient = tx._2
+          )
+        when (totAssetAmount > sum txAmounts) do 
+          create Asset with
+            assetType
+            owner
+            amount = (totAssetAmount - sum txAmounts)
+          return ()
+
     nonconsuming choice Create_Transfer : ContractId AssetTransfer
       with 
         assetCids : [ContractId Asset]
@@ -302,108 +328,110 @@ setup = script do
   gamblekingId <- validateUserId "gambleking"
 -- user_setup_end
 
-  -- let bettors = [alice, bob]
+  let bettors = [alice, bob]
 
-  -- let
-  --   gamble_tkn = AssetType with
-  --     issuer = gambleunion
-  --     symbol = "GBL"
+  let
+    gamble_tkn = AssetType with
+      issuer = gambleunion
+      symbol = "GBL"
 
-  -- -- create union
-  -- gamblersUnion1 <- submit gambleunion do
-  --   createCmd GamblersUnion with
-  --     assetType = gamble_tkn
-  --     registeredBookies = []
+  -- create union
+  gamblersUnion1 <- submit gambleunion do
+    createCmd GamblersUnion with
+      assetType = gamble_tkn
+      registeredBookies = []
   
-  -- -- create house
-  -- houseProposal1 <- submit gambleunion do
-  --   exerciseCmd gamblersUnion1 (Create_House_Proposal gambleking)
+  -- create house
+  houseProposal1 <- submit gambleunion do
+    exerciseCmd gamblersUnion1 (Create_House_Proposal gambleking)
 
-  -- houseAgreement1 <- submit gambleking do 
-  --   exerciseCmd houseProposal1 HouseProposal_Accept
+  houseAgreement1 <- submit gambleking do 
+    exerciseCmd houseProposal1 HouseProposal_Accept
 
-  -- house1 <- submit gambleunion do
-  --   exerciseCmd houseAgreement1 Create_House
+  house1 <- submit gambleunion do
+    exerciseCmd houseAgreement1 Create_House
 
-  -- gamblekingAcctTuple <- queryContractKey @GamblingAccount gambleking (gamble_tkn, gambleking, gambleking)
-  -- let (gamblekingAcctCid, gamblekingAcct) = fromSome gamblekingAcctTuple
+  gamblekingAcctTuple <- queryContractKey @GamblingAccount gambleking (gamble_tkn, gambleking, gambleking)
+  let (gamblekingAcctCid, gamblekingAcct) = fromSome gamblekingAcctTuple
 
-  -- -- create alice account
-  -- aliceAcctProposal <- submit gambleking do
-  --   exerciseCmd gamblekingAcctCid (Invite_New_Owner alice)
+  -- create alice account
+  aliceAcctProposal <- submit gambleking do
+    exerciseCmd gamblekingAcctCid (Invite_New_Owner alice)
 
-  -- aliceAcctAgreement <- submit alice do
-  --   exerciseCmd aliceAcctProposal AcceptGamblingAccountProposal
+  aliceAcctAgreement <- submit alice do
+    exerciseCmd aliceAcctProposal AcceptGamblingAccountProposal
 
-  -- aliceAcct <- submit gambleunion do
-  --   exerciseCmd aliceAcctAgreement Create_Gambling_Account
+  aliceAcct <- submit gambleunion do
+    exerciseCmd aliceAcctAgreement Create_Gambling_Account
 
-  -- -- create bob account
-  -- bobAcctProposal <- submit gambleking do
-  --   exerciseCmd gamblekingAcctCid (Invite_New_Owner bob)
+  -- create bob account
+  bobAcctProposal <- submit gambleking do
+    exerciseCmd gamblekingAcctCid (Invite_New_Owner bob)
 
-  -- bobAcctAgreement <- submit bob do
-  --   exerciseCmd bobAcctProposal AcceptGamblingAccountProposal
+  bobAcctAgreement <- submit bob do
+    exerciseCmd bobAcctProposal AcceptGamblingAccountProposal
 
-  -- bobAcct <- submit gambleunion do
-  --   exerciseCmd bobAcctAgreement Create_Gambling_Account
+  bobAcct <- submit gambleunion do
+    exerciseCmd bobAcctAgreement Create_Gambling_Account
 
-  -- -- create assets and transfer
-  -- asset1Cid <- submit gambleunion do
-  --   createCmd Asset with
-  --     assetType = gamble_tkn
-  --     owner = gambleunion
-  --     amount = 100.0
+  -- create assets
+  asset1Cid <- submit gambleunion do
+    createCmd Asset with
+      assetType = gamble_tkn
+      owner = gambleunion
+      amount = 100.0
 
-  -- asset2Cid <- submit gambleunion do
-  --   createCmd Asset with
-  --     assetType = gamble_tkn
-  --     owner = gambleunion
-  --     amount = 200.0
+  asset2Cid <- submit gambleunion do
+    createCmd Asset with
+      assetType = gamble_tkn
+      owner = gambleunion
+      amount = 200.0
 
-  -- asset3Cid <- submit gambleunion do
-  --   createCmd Asset with
-  --     assetType = gamble_tkn
-  --     owner = gambleunion
-  --     amount = 300.0
+  asset3Cid <- submit gambleunion do
+    createCmd Asset with
+      assetType = gamble_tkn
+      owner = gambleunion
+      amount = 300.0
 
-  -- gambleunionAcctTuple <- queryContractKey @GamblingAccount gambleunion (gamble_tkn, gambleking, gambleunion)
-  -- let (gambleunionAcctCid, gambleunionAcct) = fromSome gambleunionAcctTuple
+  gambleunionAcctTuple <- queryContractKey @GamblingAccount gambleunion (gamble_tkn, gambleking, gambleunion)
+  let (gambleunionAcctCid, gambleunionAcct) = fromSome gambleunionAcctTuple
 
-  -- -- test negative transfer
-  -- submitMustFail gambleunion do
-  --   exerciseCmd gambleunionAcctCid Merge_Split with
-  --     assetCids = [asset1Cid, asset2Cid, asset3Cid] 
-  --     outputAmounts = [-400.0, 150.0]
+  -- test negative MergeSplit
+  submitMustFail gambleunion do
+    exerciseCmd gambleunionAcctCid Merge_Split with
+      assetCids = [asset1Cid, asset2Cid, asset3Cid] 
+      outputAmounts = [-400.0, 150.0]
 
-  -- newAssetCids <- submit gambleunion do
-  --   exerciseCmd gambleunionAcctCid Merge_Split with
-  --     assetCids = [asset1Cid, asset2Cid, asset3Cid] 
-  --     outputAmounts = [400.0, 150.0]
+ -- test MergeSplit
+  newAssetCids <- submit gambleunion do
+    exerciseCmd gambleunionAcctCid Merge_Split with
+      assetCids = [asset1Cid, asset2Cid, asset3Cid] 
+      outputAmounts = [400.0, 150.0]
 
-  -- submit gambleunion do 
-  --   exerciseCmd gambleunionAcctCid Create_Transfer with
-  --     assetCids = newAssetCids
-  --     transfer = (360.0, alice)
+  -- create transfers
+  submit gambleunion do 
+    exerciseCmd gambleunionAcctCid Create_Transfers with
+      assetCids = newAssetCids
+      transfers = [(360.0, alice), (150.0, bob)]
   
-  -- aliceTransfers <- queryFilter @AssetTransfer alice (\tx -> tx.recipient==alice)
-  -- let aliceTransferCid = (head aliceTransfers)._1
+  aliceTransfers <- queryFilter @AssetTransfer alice (\tx -> tx.recipient==alice)
+  let aliceTransferCid = (head aliceTransfers)._1
 
-  -- -- Cannot accept via Accept_transfer
-  --   -- Asset issuer or owner cannot accept transfer by calling Accept_Transfer choice on Asset contract
-  -- submitMustFail alice do
-  --   exerciseCmd aliceTransferCid Accept_Transfer
+  -- Cannot accept via Accept_transfer
+    -- Asset issuer or owner cannot accept transfer by calling Accept_Transfer choice on Asset contract
+  submitMustFail alice do
+    exerciseCmd aliceTransferCid Accept_Transfer
 
-  -- -- Ownership transfer via Deposit_Transfer_Into_Account
-  -- alice_asset_cids <- submit alice do
-  --   exerciseCmd aliceAcct Deposit_Transfer_Into_Account with 
-  --     transferCid = aliceTransferCid
+  -- Ownership transfer via Deposit_Transfer_Into_Account
+  alice_asset_cids <- submit alice do
+    exerciseCmd aliceAcct Deposit_Transfer_Into_Account with 
+      transferCid = aliceTransferCid
 
-  -- -- Assert balance
-  -- optionalAccount <- queryContractId gambleunion gambleunionAcctCid
-  -- let account = fromSome optionalAccount
-  -- balance <- accountBalance account
-  -- debug balance
-  -- balance === 60.0
+  -- Assert balance
+  optionalAccount <- queryContractId gambleunion gambleunionAcctCid
+  let account = fromSome optionalAccount
+  balance <- accountBalance account
+  debug balance
+  -- balance === 240.0
     
   pure()
