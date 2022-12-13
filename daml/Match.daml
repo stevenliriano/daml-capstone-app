@@ -74,7 +74,7 @@ template BetSlip
     betCids : [ContractId Bet]                  
   where
     signatory bookie
-    observer bettors, admin
+    observer bettors, admin, gamblersUnion.assetType.issuer
     key (bookie, admin, competitors, time) : (Party, Party, (Text, Text), Time)
     maintainer key._1
     
@@ -150,23 +150,10 @@ template BetSlip
               time
 
     choice SettleBets: ()
-      controller admin
+      controller gamblersUnion.assetType.issuer
       do 
-        (matchCid, match) <- fetchByKey @Match (admin, competitors, time)
-        -- ensure all bet contracts get archived
         forA_ betCids (\betCid -> do
-          bet <- fetch betCid
-          (bettor1AcctCid, bettor1Acct) <- fetchByKey @GamblingAccount (gamblersUnion.assetType, bookie, bet.bettor1)
-          (bettor2AcctCid, bettor2Acct) <- fetchByKey @GamblingAccount (gamblersUnion.assetType, bookie, bet.bettor2)
-          if (match.winner == makeTextOptional bet.bettor1Pick)
-          then do
-            exercise bettor1AcctCid Deposit_Transfer_Into_Account with
-                transferCid = fromSome bet.bettor2TransferCid
-            exercise bet.bettor1TransferCid Reject_Transfer
-          else do
-            exercise bettor2AcctCid Deposit_Transfer_Into_Account with
-                transferCid = bet.bettor1TransferCid
-            exercise (fromSome bet.bettor2TransferCid) Reject_Transfer
+            exercise betCid Settle_Bet
           )
         pure()
 
@@ -517,11 +504,20 @@ setup = script do
     exerciseCmd match1Cid (SettleMatch "Vikings")
 
   -- settle bets
-  submit gambleunion do
-    exerciseCmd bet1Cid Settle_Bet
+  
+  -- submit gambleunion do
+  --   exerciseCmd bet1Cid Settle_Bet
+
+  -- submit gambleunion do
+  --   exerciseCmd bet2Cid Settle_Bet
+
+  newBetSlipTuple <- queryContractKey @BetSlip gambleunion (gambleking, matchqueen, ("Vikings", "Eagles"), currentTime)
+  let newBetSlipCid = (fromSome newBetSlipTuple)._1
 
   submit gambleunion do
-    exerciseCmd bet2Cid Settle_Bet
+    exerciseCmd newBetSlipCid SettleBets
+
+  -- Deposit House Fees into bookie gambling acct
 
   bookieHouseTuple <- queryContractKey @House gambleking (gambleking, gamble_tkn)
   let bookieHouseCid = (fromSome bookieHouseTuple)._1
