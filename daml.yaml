@@ -4,9 +4,29 @@
 sdk-version: 2.4.0
 name: DamlTrain
 source: daml
-init-script: Main:setup
+init-script: Match:setup
+#parties:
+#   - DeloitteAgency
+#   - DeloitteFunder
+#   - DeloitteAdmin
+#   - DeloitteApplicant1
+#   - DeloitteApplicant2
+#   - DeloitteApplicant3
+#   - deloitteTechnicalReviewer
 version: 0.0.1
 dependencies:
   - daml-prim
   - daml-stdlib
   - daml-script
+
+start-navigator: true
+script-options:
+  - --output-file=ui/src/parties.json
+# navigator-options:
+#   - --feature-user-management=false
+json-api-options:
+  - --address=0.0.0.0
+codegen:
+  js:
+    output-directory: ui/daml.js
+    npm-scope: daml.js

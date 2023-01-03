@@ -1,0 +1,19 @@
+[{
+  "_1": "Alice",
+  "_2": "Alice::1220a1bf61827de81d8c1e78ea53d1634fe68a0a512a6a26a9282071aadb4e95d7a6"
+}, {
+  "_1": "Bob",
+  "_2": "Bob::1220a1bf61827de81d8c1e78ea53d1634fe68a0a512a6a26a9282071aadb4e95d7a6"
+}, {
+  "_1": "Charlie",
+  "_2": "Charlie::1220a1bf61827de81d8c1e78ea53d1634fe68a0a512a6a26a9282071aadb4e95d7a6"
+}, {
+  "_1": "GambleUnion",
+  "_2": "GambleUnion::1220a1bf61827de81d8c1e78ea53d1634fe68a0a512a6a26a9282071aadb4e95d7a6"
+}, {
+  "_1": "MatchQueen",
+  "_2": "MatchQueen::1220a1bf61827de81d8c1e78ea53d1634fe68a0a512a6a26a9282071aadb4e95d7a6"
+}, {
+  "_1": "GambleKing",
+  "_2": "GambleKing::1220a1bf61827de81d8c1e78ea53d1634fe68a0a512a6a26a9282071aadb4e95d7a6"
+}]

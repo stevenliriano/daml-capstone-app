@@ -292,8 +292,8 @@ template BetAgreement
 
         return newBetCid
 
-setup : Script() 
-setup = script do
+setup : Script([(Text, Party)] )
+setup = do
 -- user_setup_begin
   alice    <- allocatePartyWithHint "Alice" (PartyIdHint "Alice")
   bob      <- allocatePartyWithHint "Bob" (PartyIdHint "Bob")
@@ -301,6 +301,7 @@ setup = script do
   gambleunion <- allocatePartyWithHint "GambleUnion" (PartyIdHint "GambleUnion")
   matchqueen <- allocatePartyWithHint "MatchQueen" (PartyIdHint "MatchQueen")
   gambleking <- allocatePartyWithHint "GambleKing" (PartyIdHint "GambleKing")
+
   aliceId <- validateUserId "alice"
   bobId   <- validateUserId "bob"
   charlieId <- validateUserId "charlie"
@@ -308,6 +309,12 @@ setup = script do
   matchqueenId <- validateUserId "matchqueen"
   gamblekingId <- validateUserId "gambleking"
   
+  createUser (User aliceId (Some alice)) [CanActAs alice]
+  createUser (User bobId (Some bob)) [CanActAs bob]
+  createUser (User charlieId (Some charlie)) [CanActAs charlie]
+  createUser (User gambleunionId (Some gambleunion)) [CanActAs gambleunion]
+  createUser (User matchqueenId (Some matchqueen)) [CanActAs matchqueen]
+  createUser (User gamblekingId (Some gambleking)) [CanActAs gambleking]
 -- user_setup_end
   let bettors = [alice,bob]
       odds = [ ("Thunder",3,2), ("QuickSand",2,1)]
@@ -536,4 +543,11 @@ setup = script do
   -- debug balance
   -- balance === 240.0
 
-  pure()
+  return [
+    ("Alice", alice),
+    ("Bob", bob),
+    ("Charlie", charlie),
+    ("GambleUnion", gambleunion),
+    ("MatchQueen", matchqueen),
+    ("GambleKing", gambleking)
+   ]

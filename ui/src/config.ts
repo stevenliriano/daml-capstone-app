@@ -1,94 +1,36 @@
-// Copyright (c) 2022 Digital Asset (Switzerland) GmbH and/or its affiliates. All rights reserved.
-// SPDX-License-Identifier: Apache-2.0
+import * as jwt from "jsonwebtoken";
+import partyList from "./parties.json";
 
-import { encode } from 'jwt-simple';
-import { isRunningOnHub } from '@daml/hub-react';
-import Ledger, { CanReadAs } from '@daml/ledger';
+const parties : any = {};
+partyList.forEach(p => parties[p._1] = p._2);
+const names : any = {};
+partyList.forEach(p => names[p._2] = p._1);
 
-export type UserManagement = {
-  tokenPayload: (loginName: string, ledgerId: string) => Object,
-  primaryParty: (loginName: string, ledger: Ledger) => Promise<string>,
-  publicParty: (loginName: string, ledger: Ledger) => Promise<string>,
-};
+const applicationId = 'daml-grants'
+// Must be sandbox
+const ledgerId = "sandbox";
 
-export type Insecure = {
-  provider: "none",
-  userManagement: UserManagement,
-  makeToken: (party: string) => string,
-};
+// Unfortunately, the development server of `create-react-app` does not proxy
+// websockets properly. Thus, we need to bypass it and talk to the JSON API
+// directly in development mode.
+export const wsBaseUrl = "ws://localhost:7575/";
+export const httpBaseUrl = undefined;
 
-export type DamlHub = {
-  provider: "daml-hub",
-};
+export const createToken = (party : string) => jwt.sign({ "https://daml.com/ledger-api": { ledgerId, applicationId, admin: true, actAs: [party], readAs: [party] } }, "secret")
 
-export type Authentication = Insecure | DamlHub;
+export const damlAppKey = applicationId + ".daml.name";
 
-// This needs to be used for ledgers in SDK < 2.0.0 and VMBC <= 1.6
-export const noUserManagement: UserManagement = {
-  tokenPayload: (loginName: string, ledgerId: string) =>
-  ({
-    "https://daml.com/ledger-api": {
-      "ledgerId": ledgerId,
-      "applicationId": 'create-daml-app',
-      "actAs": [loginName]
-    }
-  }),
-  primaryParty: async (loginName: string, ledger: Ledger) => loginName,
-  // Without user management, we force a specific party id here because
-  // we mainly care about this for vmbc and there we can support this.
-  publicParty: async (loginName: string, ledger: Ledger) => 'public',
-};
+const tokens : any = {};
+partyList.forEach(p => tokens[p._2] = createToken(p._2));
 
-// Used on SDK >= 2.0.0 with the exception of VMBC
-export const withUserManagement: UserManagement = {
-  tokenPayload: (loginName: string, ledgerId: string) =>
-  ({
-    sub: loginName,
-    scope: "daml_ledger_api"
-  }),
-  primaryParty: async (loginName, ledger: Ledger) => {
-    const user = await ledger.getUser();
-    if (user.primaryParty !== undefined) {
-      return user.primaryParty;
-    } else {
-      throw new Error(`User '${loginName}' has no primary party`);
-    }
+export function getParty(name : string) : string {
+  return (parties[name] || "") as string;
+}
 
-  },
-  publicParty: async (loginName, ledger: Ledger) => {
-    const rights = await ledger.listUserRights();
-    const readAsRights: CanReadAs[] = rights.filter((x) : x is CanReadAs => x.type === "CanReadAs");
-    if (readAsRights.length === 0) {
-      throw new Error(`User '${loginName} has no readAs claims for a public party`);
-    } else if (readAsRights.length > 1) {
-      throw new Error(`User '${loginName} has readAs claims for more than one party`);
-    } else {
-      return readAsRights[0].party;
-    }
-  }
-};
+export function getName(party : string) : string {
+  return (names[party] || "") as string;
+}
 
-export const userManagement: UserManagement =
-  // We default to assuming that user management is enabled so we interpret everything that
-  // isn’t explicitly "false" as supporting user management.
-  process.env.REACT_APP_SUPPORTS_USERMANAGEMENT?.toLowerCase() !== "false" ? withUserManagement : noUserManagement;
-
-export const authConfig: Authentication = (() => {
-  if (isRunningOnHub()) {
-    const auth: DamlHub = {
-      provider: "daml-hub",
-    };
-    return auth;
-  } else {
-    const ledgerId: string = process.env.REACT_APP_LEDGER_ID ?? "create-daml-app-sandbox"
-    const auth: Insecure = {
-      provider: "none",
-      userManagement: userManagement,
-      makeToken: (loginName) => {
-        const payload = userManagement.tokenPayload(loginName, ledgerId);
-        return encode(payload, "secret", "HS256");
-      }
-    };
-    return auth;
-  }
-})();
+export function getToken(party : string) {
+  return (tokens[party] || "") as string;
+}
