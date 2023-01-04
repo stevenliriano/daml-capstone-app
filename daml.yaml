@@ -5,14 +5,7 @@ sdk-version: 2.4.0
 name: DamlTrain
 source: daml
 init-script: Test:setup
-#parties:
-#   - DeloitteAgency
-#   - DeloitteFunder
-#   - DeloitteAdmin
-#   - DeloitteApplicant1
-#   - DeloitteApplicant2
-#   - DeloitteApplicant3
-#   - deloitteTechnicalReviewer
+
 version: 0.0.1
 dependencies:
   - daml-prim
