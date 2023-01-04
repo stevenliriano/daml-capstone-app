@@ -44,7 +44,7 @@ export declare interface BetAgreementInterface {
   Archive: damlTypes.Choice<BetAgreement, pkgd14e08374fc7197d6a0de468c968ae8ba3aadbf9315476fd39071831f5923662.DA.Internal.Template.Archive, {}, undefined> & damlTypes.ChoiceFrom<damlTypes.Template<BetAgreement, undefined>>;
 }
 export declare const BetAgreement:
-  damlTypes.Template<BetAgreement, undefined, '918474ccb8dad25d4452a192455e1c0d43c191a9964c7646b72298c136ebc850:Match:BetAgreement'> &
+  damlTypes.Template<BetAgreement, undefined, '0edfd44f07e5f52a30677100646c62561ba9a47abbe28a5190f6ed61d7e7865b:Match:BetAgreement'> &
   damlTypes.ToInterface<BetAgreement, never> &
   BetAgreementInterface;
 
@@ -76,7 +76,7 @@ export declare interface BetProposalInterface {
   Archive: damlTypes.Choice<BetProposal, pkgd14e08374fc7197d6a0de468c968ae8ba3aadbf9315476fd39071831f5923662.DA.Internal.Template.Archive, {}, undefined> & damlTypes.ChoiceFrom<damlTypes.Template<BetProposal, undefined>>;
 }
 export declare const BetProposal:
-  damlTypes.Template<BetProposal, undefined, '918474ccb8dad25d4452a192455e1c0d43c191a9964c7646b72298c136ebc850:Match:BetProposal'> &
+  damlTypes.Template<BetProposal, undefined, '0edfd44f07e5f52a30677100646c62561ba9a47abbe28a5190f6ed61d7e7865b:Match:BetProposal'> &
   damlTypes.ToInterface<BetProposal, never> &
   BetProposalInterface;
 
@@ -120,7 +120,7 @@ export declare interface BetInterface {
   Archive: damlTypes.Choice<Bet, pkgd14e08374fc7197d6a0de468c968ae8ba3aadbf9315476fd39071831f5923662.DA.Internal.Template.Archive, {}, undefined> & damlTypes.ChoiceFrom<damlTypes.Template<Bet, undefined>>;
 }
 export declare const Bet:
-  damlTypes.Template<Bet, undefined, '918474ccb8dad25d4452a192455e1c0d43c191a9964c7646b72298c136ebc850:Match:Bet'> &
+  damlTypes.Template<Bet, undefined, '0edfd44f07e5f52a30677100646c62561ba9a47abbe28a5190f6ed61d7e7865b:Match:Bet'> &
   damlTypes.ToInterface<Bet, never> &
   BetInterface;
 
@@ -174,7 +174,7 @@ export declare interface BetSlipInterface {
   Archive: damlTypes.Choice<BetSlip, pkgd14e08374fc7197d6a0de468c968ae8ba3aadbf9315476fd39071831f5923662.DA.Internal.Template.Archive, {}, BetSlip.Key> & damlTypes.ChoiceFrom<damlTypes.Template<BetSlip, BetSlip.Key>>;
 }
 export declare const BetSlip:
-  damlTypes.Template<BetSlip, BetSlip.Key, '918474ccb8dad25d4452a192455e1c0d43c191a9964c7646b72298c136ebc850:Match:BetSlip'> &
+  damlTypes.Template<BetSlip, BetSlip.Key, '0edfd44f07e5f52a30677100646c62561ba9a47abbe28a5190f6ed61d7e7865b:Match:BetSlip'> &
   damlTypes.ToInterface<BetSlip, never> &
   BetSlipInterface;
 
@@ -223,7 +223,7 @@ export declare interface MatchInterface {
   Archive: damlTypes.Choice<Match, pkgd14e08374fc7197d6a0de468c968ae8ba3aadbf9315476fd39071831f5923662.DA.Internal.Template.Archive, {}, Match.Key> & damlTypes.ChoiceFrom<damlTypes.Template<Match, Match.Key>>;
 }
 export declare const Match:
-  damlTypes.Template<Match, Match.Key, '918474ccb8dad25d4452a192455e1c0d43c191a9964c7646b72298c136ebc850:Match:Match'> &
+  damlTypes.Template<Match, Match.Key, '0edfd44f07e5f52a30677100646c62561ba9a47abbe28a5190f6ed61d7e7865b:Match:Match'> &
   damlTypes.ToInterface<Match, never> &
   MatchInterface;
 

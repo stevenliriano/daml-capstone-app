@@ -32,7 +32,7 @@ export declare interface GamblingAccountAgreementInterface {
   Create_Gambling_Account: damlTypes.Choice<GamblingAccountAgreement, Create_Gambling_Account, damlTypes.ContractId<GamblingAccount>, undefined> & damlTypes.ChoiceFrom<damlTypes.Template<GamblingAccountAgreement, undefined>>;
 }
 export declare const GamblingAccountAgreement:
-  damlTypes.Template<GamblingAccountAgreement, undefined, '918474ccb8dad25d4452a192455e1c0d43c191a9964c7646b72298c136ebc850:Account:GamblingAccountAgreement'> &
+  damlTypes.Template<GamblingAccountAgreement, undefined, '0edfd44f07e5f52a30677100646c62561ba9a47abbe28a5190f6ed61d7e7865b:Account:GamblingAccountAgreement'> &
   damlTypes.ToInterface<GamblingAccountAgreement, never> &
   GamblingAccountAgreementInterface;
 
@@ -63,7 +63,7 @@ export declare interface GamblingAccountProposalInterface {
   Archive: damlTypes.Choice<GamblingAccountProposal, pkgd14e08374fc7197d6a0de468c968ae8ba3aadbf9315476fd39071831f5923662.DA.Internal.Template.Archive, {}, undefined> & damlTypes.ChoiceFrom<damlTypes.Template<GamblingAccountProposal, undefined>>;
 }
 export declare const GamblingAccountProposal:
-  damlTypes.Template<GamblingAccountProposal, undefined, '918474ccb8dad25d4452a192455e1c0d43c191a9964c7646b72298c136ebc850:Account:GamblingAccountProposal'> &
+  damlTypes.Template<GamblingAccountProposal, undefined, '0edfd44f07e5f52a30677100646c62561ba9a47abbe28a5190f6ed61d7e7865b:Account:GamblingAccountProposal'> &
   damlTypes.ToInterface<GamblingAccountProposal, never> &
   GamblingAccountProposalInterface;
 
@@ -144,7 +144,7 @@ export declare interface GamblingAccountInterface {
   Archive: damlTypes.Choice<GamblingAccount, pkgd14e08374fc7197d6a0de468c968ae8ba3aadbf9315476fd39071831f5923662.DA.Internal.Template.Archive, {}, GamblingAccount.Key> & damlTypes.ChoiceFrom<damlTypes.Template<GamblingAccount, GamblingAccount.Key>>;
 }
 export declare const GamblingAccount:
-  damlTypes.Template<GamblingAccount, GamblingAccount.Key, '918474ccb8dad25d4452a192455e1c0d43c191a9964c7646b72298c136ebc850:Account:GamblingAccount'> &
+  damlTypes.Template<GamblingAccount, GamblingAccount.Key, '0edfd44f07e5f52a30677100646c62561ba9a47abbe28a5190f6ed61d7e7865b:Account:GamblingAccount'> &
   damlTypes.ToInterface<GamblingAccount, never> &
   GamblingAccountInterface;
 
@@ -177,7 +177,7 @@ export declare interface HouseAgreementInterface {
   Archive: damlTypes.Choice<HouseAgreement, pkgd14e08374fc7197d6a0de468c968ae8ba3aadbf9315476fd39071831f5923662.DA.Internal.Template.Archive, {}, undefined> & damlTypes.ChoiceFrom<damlTypes.Template<HouseAgreement, undefined>>;
 }
 export declare const HouseAgreement:
-  damlTypes.Template<HouseAgreement, undefined, '918474ccb8dad25d4452a192455e1c0d43c191a9964c7646b72298c136ebc850:Account:HouseAgreement'> &
+  damlTypes.Template<HouseAgreement, undefined, '0edfd44f07e5f52a30677100646c62561ba9a47abbe28a5190f6ed61d7e7865b:Account:HouseAgreement'> &
   damlTypes.ToInterface<HouseAgreement, never> &
   HouseAgreementInterface;
 
@@ -208,7 +208,7 @@ export declare interface HouseProposalInterface {
   Archive: damlTypes.Choice<HouseProposal, pkgd14e08374fc7197d6a0de468c968ae8ba3aadbf9315476fd39071831f5923662.DA.Internal.Template.Archive, {}, undefined> & damlTypes.ChoiceFrom<damlTypes.Template<HouseProposal, undefined>>;
 }
 export declare const HouseProposal:
-  damlTypes.Template<HouseProposal, undefined, '918474ccb8dad25d4452a192455e1c0d43c191a9964c7646b72298c136ebc850:Account:HouseProposal'> &
+  damlTypes.Template<HouseProposal, undefined, '0edfd44f07e5f52a30677100646c62561ba9a47abbe28a5190f6ed61d7e7865b:Account:HouseProposal'> &
   damlTypes.ToInterface<HouseProposal, never> &
   HouseProposalInterface;
 
@@ -253,7 +253,7 @@ export declare interface HouseInterface {
   Archive: damlTypes.Choice<House, pkgd14e08374fc7197d6a0de468c968ae8ba3aadbf9315476fd39071831f5923662.DA.Internal.Template.Archive, {}, House.Key> & damlTypes.ChoiceFrom<damlTypes.Template<House, House.Key>>;
 }
 export declare const House:
-  damlTypes.Template<House, House.Key, '918474ccb8dad25d4452a192455e1c0d43c191a9964c7646b72298c136ebc850:Account:House'> &
+  damlTypes.Template<House, House.Key, '0edfd44f07e5f52a30677100646c62561ba9a47abbe28a5190f6ed61d7e7865b:Account:House'> &
   damlTypes.ToInterface<House, never> &
   HouseInterface;
 
@@ -298,7 +298,7 @@ export declare interface GamblersUnionInterface {
   Archive: damlTypes.Choice<GamblersUnion, pkgd14e08374fc7197d6a0de468c968ae8ba3aadbf9315476fd39071831f5923662.DA.Internal.Template.Archive, {}, GamblersUnion.Key> & damlTypes.ChoiceFrom<damlTypes.Template<GamblersUnion, GamblersUnion.Key>>;
 }
 export declare const GamblersUnion:
-  damlTypes.Template<GamblersUnion, GamblersUnion.Key, '918474ccb8dad25d4452a192455e1c0d43c191a9964c7646b72298c136ebc850:Account:GamblersUnion'> &
+  damlTypes.Template<GamblersUnion, GamblersUnion.Key, '0edfd44f07e5f52a30677100646c62561ba9a47abbe28a5190f6ed61d7e7865b:Account:GamblersUnion'> &
   damlTypes.ToInterface<GamblersUnion, never> &
   GamblersUnionInterface;
 

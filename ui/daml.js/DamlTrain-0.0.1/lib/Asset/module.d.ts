@@ -48,7 +48,7 @@ export declare interface AssetTransferInterface {
   Accept_Transfer: damlTypes.Choice<AssetTransfer, Accept_Transfer, damlTypes.ContractId<Asset>, undefined> & damlTypes.ChoiceFrom<damlTypes.Template<AssetTransfer, undefined>>;
 }
 export declare const AssetTransfer:
-  damlTypes.Template<AssetTransfer, undefined, '918474ccb8dad25d4452a192455e1c0d43c191a9964c7646b72298c136ebc850:Asset:AssetTransfer'> &
+  damlTypes.Template<AssetTransfer, undefined, '0edfd44f07e5f52a30677100646c62561ba9a47abbe28a5190f6ed61d7e7865b:Asset:AssetTransfer'> &
   damlTypes.ToInterface<AssetTransfer, never> &
   AssetTransferInterface;
 
@@ -71,7 +71,7 @@ export declare interface AssetInterface {
   Archive: damlTypes.Choice<Asset, pkgd14e08374fc7197d6a0de468c968ae8ba3aadbf9315476fd39071831f5923662.DA.Internal.Template.Archive, {}, undefined> & damlTypes.ChoiceFrom<damlTypes.Template<Asset, undefined>>;
 }
 export declare const Asset:
-  damlTypes.Template<Asset, undefined, '918474ccb8dad25d4452a192455e1c0d43c191a9964c7646b72298c136ebc850:Asset:Asset'> &
+  damlTypes.Template<Asset, undefined, '0edfd44f07e5f52a30677100646c62561ba9a47abbe28a5190f6ed61d7e7865b:Asset:Asset'> &
   damlTypes.ToInterface<Asset, never> &
   AssetInterface;
 

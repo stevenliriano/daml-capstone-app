@@ -50,7 +50,7 @@ exports.Cancel_Transfer = {
 
 exports.AssetTransfer = damlTypes.assembleTemplate(
 {
-  templateId: '918474ccb8dad25d4452a192455e1c0d43c191a9964c7646b72298c136ebc850:Asset:AssetTransfer',
+  templateId: '0edfd44f07e5f52a30677100646c62561ba9a47abbe28a5190f6ed61d7e7865b:Asset:AssetTransfer',
   keyDecoder: damlTypes.lazyMemo(function () { return jtv.constant(undefined); }),
   keyEncode: function () { throw 'EncodeError'; },
   decoder: damlTypes.lazyMemo(function () { return jtv.object({asset: exports.Asset.decoder, recipient: damlTypes.Party.decoder, }); }),
@@ -104,7 +104,7 @@ damlTypes.registerTemplate(exports.AssetTransfer);
 
 exports.Asset = damlTypes.assembleTemplate(
 {
-  templateId: '918474ccb8dad25d4452a192455e1c0d43c191a9964c7646b72298c136ebc850:Asset:Asset',
+  templateId: '0edfd44f07e5f52a30677100646c62561ba9a47abbe28a5190f6ed61d7e7865b:Asset:Asset',
   keyDecoder: damlTypes.lazyMemo(function () { return jtv.constant(undefined); }),
   keyEncode: function () { throw 'EncodeError'; },
   decoder: damlTypes.lazyMemo(function () { return jtv.object({assetType: exports.AssetType.decoder, owner: damlTypes.Party.decoder, amount: damlTypes.Numeric(10).decoder, }); }),

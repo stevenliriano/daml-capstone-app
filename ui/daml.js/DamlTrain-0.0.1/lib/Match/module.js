@@ -32,7 +32,7 @@ exports.Create_Bet = {
 
 exports.BetAgreement = damlTypes.assembleTemplate(
 {
-  templateId: '918474ccb8dad25d4452a192455e1c0d43c191a9964c7646b72298c136ebc850:Match:BetAgreement',
+  templateId: '0edfd44f07e5f52a30677100646c62561ba9a47abbe28a5190f6ed61d7e7865b:Match:BetAgreement',
   keyDecoder: damlTypes.lazyMemo(function () { return jtv.constant(undefined); }),
   keyEncode: function () { throw 'EncodeError'; },
   decoder: damlTypes.lazyMemo(function () { return jtv.object({odds: damlTypes.List(pkg40f452260bef3f29dede136108fc08a88d5a5250310281067087da6f0baddff7.DA.Types.Tuple3(damlTypes.Text, damlTypes.Numeric(10), damlTypes.Numeric(10))).decoder, bettor1: damlTypes.Party.decoder, bettor2: damlTypes.Party.decoder, bookie: damlTypes.Party.decoder, bettor1Amount: damlTypes.Numeric(10).decoder, bettor1Pick: damlTypes.Text.decoder, bettor1AssetCids: damlTypes.List(damlTypes.ContractId(Asset.Asset)).decoder, bettor2AssetCids: damlTypes.List(damlTypes.ContractId(Asset.Asset)).decoder, bettor1TransferCid: damlTypes.ContractId(Asset.AssetTransfer).decoder, bettor2TransferCid: damlTypes.Optional(damlTypes.ContractId(Asset.AssetTransfer)).decoder, gamblersUnion: Account.GamblersUnion.decoder, matchAdmin: damlTypes.Party.decoder, competitors: pkg40f452260bef3f29dede136108fc08a88d5a5250310281067087da6f0baddff7.DA.Types.Tuple2(damlTypes.Text, damlTypes.Text).decoder, time: damlTypes.Time.decoder, }); }),
@@ -94,7 +94,7 @@ exports.AcceptBetProposal = {
 
 exports.BetProposal = damlTypes.assembleTemplate(
 {
-  templateId: '918474ccb8dad25d4452a192455e1c0d43c191a9964c7646b72298c136ebc850:Match:BetProposal',
+  templateId: '0edfd44f07e5f52a30677100646c62561ba9a47abbe28a5190f6ed61d7e7865b:Match:BetProposal',
   keyDecoder: damlTypes.lazyMemo(function () { return jtv.constant(undefined); }),
   keyEncode: function () { throw 'EncodeError'; },
   decoder: damlTypes.lazyMemo(function () { return jtv.object({betAgreement: exports.BetAgreement.decoder, }); }),
@@ -142,7 +142,7 @@ exports.Settle_Bet = {
 
 exports.Bet = damlTypes.assembleTemplate(
 {
-  templateId: '918474ccb8dad25d4452a192455e1c0d43c191a9964c7646b72298c136ebc850:Match:Bet',
+  templateId: '0edfd44f07e5f52a30677100646c62561ba9a47abbe28a5190f6ed61d7e7865b:Match:Bet',
   keyDecoder: damlTypes.lazyMemo(function () { return jtv.constant(undefined); }),
   keyEncode: function () { throw 'EncodeError'; },
   decoder: damlTypes.lazyMemo(function () { return jtv.object({odds: damlTypes.List(pkg40f452260bef3f29dede136108fc08a88d5a5250310281067087da6f0baddff7.DA.Types.Tuple3(damlTypes.Text, damlTypes.Numeric(10), damlTypes.Numeric(10))).decoder, bettor1: damlTypes.Party.decoder, bettor2: damlTypes.Party.decoder, bookie: damlTypes.Party.decoder, bettor1Amount: damlTypes.Numeric(10).decoder, bettor1Pick: damlTypes.Text.decoder, bettor1AssetCids: damlTypes.List(damlTypes.ContractId(Asset.Asset)).decoder, bettor2AssetCids: damlTypes.List(damlTypes.ContractId(Asset.Asset)).decoder, bettor1TransferCid: damlTypes.ContractId(Asset.AssetTransfer).decoder, bettor2TransferCid: damlTypes.Optional(damlTypes.ContractId(Asset.AssetTransfer)).decoder, gamblersUnion: Account.GamblersUnion.decoder, matchAdmin: damlTypes.Party.decoder, competitors: pkg40f452260bef3f29dede136108fc08a88d5a5250310281067087da6f0baddff7.DA.Types.Tuple2(damlTypes.Text, damlTypes.Text).decoder, time: damlTypes.Time.decoder, }); }),
@@ -220,7 +220,7 @@ exports.Create_Bet_Proposal = {
 
 exports.BetSlip = damlTypes.assembleTemplate(
 {
-  templateId: '918474ccb8dad25d4452a192455e1c0d43c191a9964c7646b72298c136ebc850:Match:BetSlip',
+  templateId: '0edfd44f07e5f52a30677100646c62561ba9a47abbe28a5190f6ed61d7e7865b:Match:BetSlip',
   keyDecoder: damlTypes.lazyMemo(function () { return damlTypes.lazyMemo(function () { return pkg40f452260bef3f29dede136108fc08a88d5a5250310281067087da6f0baddff7.DA.Types.Tuple4(damlTypes.Party, damlTypes.Party, pkg40f452260bef3f29dede136108fc08a88d5a5250310281067087da6f0baddff7.DA.Types.Tuple2(damlTypes.Text, damlTypes.Text), damlTypes.Time).decoder; }); }),
   keyEncode: function (__typed__) { return pkg40f452260bef3f29dede136108fc08a88d5a5250310281067087da6f0baddff7.DA.Types.Tuple4(damlTypes.Party, damlTypes.Party, pkg40f452260bef3f29dede136108fc08a88d5a5250310281067087da6f0baddff7.DA.Types.Tuple2(damlTypes.Text, damlTypes.Text), damlTypes.Time).encode(__typed__); },
   decoder: damlTypes.lazyMemo(function () { return jtv.object({admin: damlTypes.Party.decoder, bookie: damlTypes.Party.decoder, competitors: pkg40f452260bef3f29dede136108fc08a88d5a5250310281067087da6f0baddff7.DA.Types.Tuple2(damlTypes.Text, damlTypes.Text).decoder, odds: damlTypes.List(pkg40f452260bef3f29dede136108fc08a88d5a5250310281067087da6f0baddff7.DA.Types.Tuple3(damlTypes.Text, damlTypes.Numeric(10), damlTypes.Numeric(10))).decoder, time: damlTypes.Time.decoder, bettors: damlTypes.List(damlTypes.Party).decoder, gamblersUnion: Account.GamblersUnion.decoder, betCids: damlTypes.List(damlTypes.ContractId(exports.Bet)).decoder, }); }),
@@ -297,7 +297,7 @@ exports.CreateBetSlip = {
 
 exports.Match = damlTypes.assembleTemplate(
 {
-  templateId: '918474ccb8dad25d4452a192455e1c0d43c191a9964c7646b72298c136ebc850:Match:Match',
+  templateId: '0edfd44f07e5f52a30677100646c62561ba9a47abbe28a5190f6ed61d7e7865b:Match:Match',
   keyDecoder: damlTypes.lazyMemo(function () { return damlTypes.lazyMemo(function () { return pkg40f452260bef3f29dede136108fc08a88d5a5250310281067087da6f0baddff7.DA.Types.Tuple3(damlTypes.Party, pkg40f452260bef3f29dede136108fc08a88d5a5250310281067087da6f0baddff7.DA.Types.Tuple2(damlTypes.Text, damlTypes.Text), damlTypes.Time).decoder; }); }),
   keyEncode: function (__typed__) { return pkg40f452260bef3f29dede136108fc08a88d5a5250310281067087da6f0baddff7.DA.Types.Tuple3(damlTypes.Party, pkg40f452260bef3f29dede136108fc08a88d5a5250310281067087da6f0baddff7.DA.Types.Tuple2(damlTypes.Text, damlTypes.Text), damlTypes.Time).encode(__typed__); },
   decoder: damlTypes.lazyMemo(function () { return jtv.object({admin: damlTypes.Party.decoder, gamblersUnion: Account.GamblersUnion.decoder, competitors: pkg40f452260bef3f29dede136108fc08a88d5a5250310281067087da6f0baddff7.DA.Types.Tuple2(damlTypes.Text, damlTypes.Text).decoder, time: damlTypes.Time.decoder, winner: damlTypes.Optional(damlTypes.Text).decoder, }); }),

@@ -4,7 +4,7 @@
 sdk-version: 2.4.0
 name: DamlTrain
 source: daml
-init-script: Match:setup
+init-script: Test:setup
 #parties:
 #   - DeloitteAgency
 #   - DeloitteFunder

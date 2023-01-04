@@ -11,4 +11,4 @@ var Asset = require('./Asset');
 exports.Asset = Asset;
 var Match = require('./Match');
 exports.Match = Match;
-exports.packageId = '918474ccb8dad25d4452a192455e1c0d43c191a9964c7646b72298c136ebc850';
+exports.packageId = '0edfd44f07e5f52a30677100646c62561ba9a47abbe28a5190f6ed61d7e7865b';

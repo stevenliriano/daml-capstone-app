@@ -31,7 +31,7 @@ exports.Create_Gambling_Account = {
 
 exports.GamblingAccountAgreement = damlTypes.assembleTemplate(
 {
-  templateId: '918474ccb8dad25d4452a192455e1c0d43c191a9964c7646b72298c136ebc850:Account:GamblingAccountAgreement',
+  templateId: '0edfd44f07e5f52a30677100646c62561ba9a47abbe28a5190f6ed61d7e7865b:Account:GamblingAccountAgreement',
   keyDecoder: damlTypes.lazyMemo(function () { return jtv.constant(undefined); }),
   keyEncode: function () { throw 'EncodeError'; },
   decoder: damlTypes.lazyMemo(function () { return jtv.object({assetType: Asset.AssetType.decoder, bookie: damlTypes.Party.decoder, owner: damlTypes.Party.decoder, }); }),
@@ -81,7 +81,7 @@ exports.AcceptGamblingAccountProposal = {
 
 exports.GamblingAccountProposal = damlTypes.assembleTemplate(
 {
-  templateId: '918474ccb8dad25d4452a192455e1c0d43c191a9964c7646b72298c136ebc850:Account:GamblingAccountProposal',
+  templateId: '0edfd44f07e5f52a30677100646c62561ba9a47abbe28a5190f6ed61d7e7865b:Account:GamblingAccountProposal',
   keyDecoder: damlTypes.lazyMemo(function () { return jtv.constant(undefined); }),
   keyEncode: function () { throw 'EncodeError'; },
   decoder: damlTypes.lazyMemo(function () { return jtv.object({gamblingAccountAgreement: exports.GamblingAccountAgreement.decoder, }); }),
@@ -181,7 +181,7 @@ exports.Invite_New_Owner = {
 
 exports.GamblingAccount = damlTypes.assembleTemplate(
 {
-  templateId: '918474ccb8dad25d4452a192455e1c0d43c191a9964c7646b72298c136ebc850:Account:GamblingAccount',
+  templateId: '0edfd44f07e5f52a30677100646c62561ba9a47abbe28a5190f6ed61d7e7865b:Account:GamblingAccount',
   keyDecoder: damlTypes.lazyMemo(function () { return damlTypes.lazyMemo(function () { return pkg40f452260bef3f29dede136108fc08a88d5a5250310281067087da6f0baddff7.DA.Types.Tuple3(Asset.AssetType, damlTypes.Party, damlTypes.Party).decoder; }); }),
   keyEncode: function (__typed__) { return pkg40f452260bef3f29dede136108fc08a88d5a5250310281067087da6f0baddff7.DA.Types.Tuple3(Asset.AssetType, damlTypes.Party, damlTypes.Party).encode(__typed__); },
   decoder: damlTypes.lazyMemo(function () { return jtv.object({assetType: Asset.AssetType.decoder, bookie: damlTypes.Party.decoder, owner: damlTypes.Party.decoder, }); }),
@@ -263,7 +263,7 @@ exports.Create_House = {
 
 exports.HouseAgreement = damlTypes.assembleTemplate(
 {
-  templateId: '918474ccb8dad25d4452a192455e1c0d43c191a9964c7646b72298c136ebc850:Account:HouseAgreement',
+  templateId: '0edfd44f07e5f52a30677100646c62561ba9a47abbe28a5190f6ed61d7e7865b:Account:HouseAgreement',
   keyDecoder: damlTypes.lazyMemo(function () { return jtv.constant(undefined); }),
   keyEncode: function () { throw 'EncodeError'; },
   decoder: damlTypes.lazyMemo(function () { return jtv.object({assetType: Asset.AssetType.decoder, bookie: damlTypes.Party.decoder, }); }),
@@ -312,7 +312,7 @@ exports.HouseProposal_Accept = {
 
 exports.HouseProposal = damlTypes.assembleTemplate(
 {
-  templateId: '918474ccb8dad25d4452a192455e1c0d43c191a9964c7646b72298c136ebc850:Account:HouseProposal',
+  templateId: '0edfd44f07e5f52a30677100646c62561ba9a47abbe28a5190f6ed61d7e7865b:Account:HouseProposal',
   keyDecoder: damlTypes.lazyMemo(function () { return jtv.constant(undefined); }),
   keyEncode: function () { throw 'EncodeError'; },
   decoder: damlTypes.lazyMemo(function () { return jtv.object({houseAgreement: exports.HouseAgreement.decoder, }); }),
@@ -373,7 +373,7 @@ exports.AddBettor = {
 
 exports.House = damlTypes.assembleTemplate(
 {
-  templateId: '918474ccb8dad25d4452a192455e1c0d43c191a9964c7646b72298c136ebc850:Account:House',
+  templateId: '0edfd44f07e5f52a30677100646c62561ba9a47abbe28a5190f6ed61d7e7865b:Account:House',
   keyDecoder: damlTypes.lazyMemo(function () { return damlTypes.lazyMemo(function () { return pkg40f452260bef3f29dede136108fc08a88d5a5250310281067087da6f0baddff7.DA.Types.Tuple2(damlTypes.Party, Asset.AssetType).decoder; }); }),
   keyEncode: function (__typed__) { return pkg40f452260bef3f29dede136108fc08a88d5a5250310281067087da6f0baddff7.DA.Types.Tuple2(damlTypes.Party, Asset.AssetType).encode(__typed__); },
   decoder: damlTypes.lazyMemo(function () { return jtv.object({bookie: damlTypes.Party.decoder, assetType: Asset.AssetType.decoder, registeredBettors: damlTypes.List(damlTypes.Party).decoder, }); }),
@@ -444,7 +444,7 @@ exports.Create_House_Proposal = {
 
 exports.GamblersUnion = damlTypes.assembleTemplate(
 {
-  templateId: '918474ccb8dad25d4452a192455e1c0d43c191a9964c7646b72298c136ebc850:Account:GamblersUnion',
+  templateId: '0edfd44f07e5f52a30677100646c62561ba9a47abbe28a5190f6ed61d7e7865b:Account:GamblersUnion',
   keyDecoder: damlTypes.lazyMemo(function () { return damlTypes.lazyMemo(function () { return Asset.AssetType.decoder; }); }),
   keyEncode: function (__typed__) { return Asset.AssetType.encode(__typed__); },
   decoder: damlTypes.lazyMemo(function () { return jtv.object({assetType: Asset.AssetType.decoder, registeredBookies: damlTypes.List(damlTypes.Party).decoder, }); }),
