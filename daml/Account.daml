@@ -76,10 +76,10 @@ template House
     observer bookie, registeredBettors
     key (bookie, assetType) : (Party, AssetType)
     maintainer key._2.issuer
-    -- CONSIDERATION: we made it so that the bookie 
-    -- can only create one House contract so that 
-    -- each House contract can be uniquely identified by the bookie as the key
-    -- TODO: add ensure statement to ensure bookie does not already have a House contract
+    -- CONSIDERATION: we made it so that the bookie
+    -- can only create one House contract with the GamblersUnion so that 
+    -- each House contract can be uniquely identified by the bookie and assetType
+    -- TODO: add ensure statement to ensure bookie does not already have a House contract with GamblersUnion
 
     choice AddBettor : ContractId House
       with
@@ -162,7 +162,7 @@ template GamblingAccount
     observer bookie
     ensure assetType.issuer /= bookie 
     -- CONSIDERATION: issuer cannot be a bookie because then they 
-    -- could issue themselves unlimited funds to eventually beat out all bettora
+    -- could issue themselves unlimited funds to their account to eventually beat out all bettora
     key (assetType, bookie, owner) : (AssetType, Party, Party)
     maintainer key._3
     -- CONSIDERATION: we made it so that a bettor

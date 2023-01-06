@@ -54,10 +54,6 @@ template Match
       do
         create this with
           winner = makeTextOptional victor
-        -- forA_ gamblersUnion.registeredBookies (\bookie -> do
-        --   (betSlipContractID, betSlipPayload) <- fetchByKey @BetSlip (bookie, admin, competitors, time)
-        --   exercise betSlipContractID (SettleBets victor)
-        --   )
 
 template BetSlip
   with

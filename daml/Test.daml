@@ -183,7 +183,7 @@ setup = script do
       bettor1 = alice
       bettor2 = gambleking
       bettor1Amount = 10.0
-      bettor1Pick = "Eagles"
+      bettor1Pick = "Vikings"
       bettor1AssetCids = aliceAssetCids
 
   betAgreement1Cid <- submit gambleking do
@@ -203,7 +203,7 @@ setup = script do
       bettor1 = bob
       bettor2 = alice
       bettor1Amount = 10.0
-      bettor1Pick = "Eagles"
+      bettor1Pick = "Vikings"
       bettor1AssetCids = bobAssetCids
 
   aliceAssetTuples2 <- queryFilter @Asset alice (\asset -> asset.owner==alice)
